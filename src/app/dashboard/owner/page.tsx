@@ -13,21 +13,29 @@ export default function OwnerDashboard() {
   useEffect(() => { loadDashboard() }, [])
 
   const loadDashboard = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { window.location.href = '/auth/login'; return }
-
-    const [profileRes, propsRes, inqRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('properties').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
-      supabase.from('inquiries').select('*, tenant:profiles(full_name,phone,aadhaar_verified), property:properties(title)').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(5),
-    ])
-
-    if (profileRes.data) setProfile(profileRes.data)
-    if (propsRes.data)   setProperties(propsRes.data)
-    if (inqRes.data)     setInquiries(inqRes.data)
-    setLoading(false)
-  }
-
+  // Test mode: skip auth check until Supabase is fully configured
+  setProfile({
+    id: 'test-user',
+    phone: '9940613373',
+    full_name: 'Test Owner',
+    role: 'owner',
+    plan: 'free',
+    aadhaar_verified: false,
+    pan_verified: false,
+    police_verified: false,
+    verification_status: 'pending',
+    avatar_url: null,
+    plan_expires_at: null,
+    current_city: 'Chennai',
+    current_state: 'Tamil Nadu',
+    preferred_lang: 'en',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })
+  setProperties([])
+  setInquiries([])
+  setLoading(false)
+}
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#0F6E56', fontFamily: 'Georgia,serif', fontSize: '1.1rem' }}>Loading...</div>

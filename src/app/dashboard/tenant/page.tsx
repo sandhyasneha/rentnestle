@@ -15,21 +15,29 @@ export default function TenantDashboard() {
   }, [])
 
   const loadDashboard = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { window.location.href = '/auth/login'; return }
-
-    const [profileRes, savedRes, agrRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('saved_properties').select('*, property:properties(*)').eq('tenant_id', user.id).limit(4),
-      supabase.from('agreements').select('*, property:properties(title,city)').eq('tenant_id', user.id).order('created_at', { ascending: false }).limit(3),
-    ])
-
-    if (profileRes.data) setProfile(profileRes.data)
-    if (savedRes.data) setSaved(savedRes.data.map((s: any) => s.property))
-    if (agrRes.data) setAgreements(agrRes.data)
-    setLoading(false)
-  }
-
+  // Test mode: skip auth check until Supabase is fully configured
+  setProfile({
+    id: 'test-user',
+    phone: '9940613373',
+    full_name: 'Test Tenant',
+    role: 'tenant',
+    plan: 'free',
+    aadhaar_verified: false,
+    pan_verified: false,
+    police_verified: false,
+    verification_status: 'pending',
+    avatar_url: null,
+    plan_expires_at: null,
+    current_city: 'Chennai',
+    current_state: 'Tamil Nadu',
+    preferred_lang: 'en',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })
+  setSaved([])
+  setAgreements([])
+  setLoading(false)
+}
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#0F6E56', fontFamily: 'Georgia,serif', fontSize: '1.1rem' }}>Loading...</div>
