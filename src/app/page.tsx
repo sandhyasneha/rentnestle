@@ -78,7 +78,7 @@ export default function HomePage() {
     const rec = new SR()
     rec.lang = lang; rec.interimResults = true; rec.continuous = false
     setListening(true)
-    rec.onresult = (e: SpeechRecognitionEvent) => {
+    rec.onresult = (e: any) => {
       const t = Array.from(e.results).map(r => r[0].transcript).join('')
       setSearchVal(t)
     }
