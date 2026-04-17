@@ -7,68 +7,48 @@ export type VoiceLang = 'en-IN' | 'ta-IN' | 'hi-IN'
 export const VOICE_LANGS: { code: VoiceLang; label: string; flag: string }[] = [
   { code: 'en-IN', label: 'English', flag: '🇬🇧' },
   { code: 'ta-IN', label: 'தமிழ்',   flag: '🇮🇳' },
-  { code: 'hi-IN', label: 'हिंदी',    flag: '🇮🇳' },
+  { code: 'hi-IN', label: 'हिंदी',   flag: '🇮🇳' },
 ]
 
-interface UseVoiceSearchReturn {
-  isListening: boolean
-  transcript: string
-  error: string | null
-  selectedLang: VoiceLang
-  setSelectedLang: (lang: VoiceLang) => void
-  startListening: () => void
-  stopListening: () => void
-  isSupported: boolean
-}
+export function useVoiceSearch(onResult?: (text: string) => void) {
+  const [isListening,    setIsListening]    = useState(false)
+  const [transcript,     setTranscript]     = useState('')
+  const [error,          setError]          = useState<string | null>(null)
+  const [selectedLang,   setSelectedLang]   = useState<VoiceLang>('en-IN')
+  const recognitionRef                      = useRef<any>(null)
 
-export function useVoiceSearch(onResult?: (text: string) => void): UseVoiceSearchReturn {
-  const [isListening, setIsListening]     = useState(false)
-  const [transcript, setTranscript]       = useState('')
-  const [error, setError]                 = useState<string | null>(null)
-  const [selectedLang, setSelectedLang]   = useState<VoiceLang>('en-IN')
-  const recognitionRef                    = useRef<any>(null)
-
-  const SpeechRecognitionAPI =
-    typeof window !== 'undefined'
-      ? (window.SpeechRecognition || window.webkitSpeechRecognition)
-      : null
-
-  const isSupported = !!SpeechRecognitionAPI
+  const isSupported = typeof window !== 'undefined' &&
+    !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition
 
   const startListening = useCallback(() => {
-    if (!SpeechRecognitionAPI) {
-      setError('Voice search not supported in this browser')
-      return
-    }
+    const SR = typeof window !== 'undefined'
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null
+
+    if (!SR) { setError('Voice search not supported'); return }
 
     setError(null)
     setTranscript('')
 
-    const recognition = new SpeechRecognitionAPI()
-    recognition.lang            = selectedLang
-    recognition.interimResults  = true
-    recognition.continuous      = false
-    recognition.maxAlternatives = 1
+    const recognition = new SR()
+    recognition.lang           = selectedLang
+    recognition.interimResults = true
+    recognition.continuous     = false
 
     recognition.onstart = () => setIsListening(true)
 
     recognition.onresult = (event: any) => {
-      const text = Array.from(event.results)F
-        .map(result => result[0].transcript)
+      const text = Array.from(event.results as any[])
+        .map((r: any) => r[0].transcript)
         .join('')
       setTranscript(text)
-
-      // Fire callback on final result
       if (event.results[event.results.length - 1].isFinal) {
         onResult?.(text)
       }
     }
 
     recognition.onerror = (event: any) => {
-      setError(event.error === 'not-allowed'
-        ? 'Microphone permission denied'
-        : 'Voice recognition error'
-      )
+      setError(event.error === 'not-allowed' ? 'Microphone permission denied' : 'Voice error')
       setIsListening(false)
     }
 
@@ -76,7 +56,7 @@ export function useVoiceSearch(onResult?: (text: string) => void): UseVoiceSearc
 
     recognitionRef.current = recognition
     recognition.start()
-  }, [SpeechRecognitionAPI, selectedLang, onResult])
+  }, [selectedLang, onResult])
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop()
