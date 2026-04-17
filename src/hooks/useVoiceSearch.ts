@@ -26,7 +26,7 @@ export function useVoiceSearch(onResult?: (text: string) => void): UseVoiceSearc
   const [transcript, setTranscript]       = useState('')
   const [error, setError]                 = useState<string | null>(null)
   const [selectedLang, setSelectedLang]   = useState<VoiceLang>('en-IN')
-  const recognitionRef                    = useRef<SpeechRecognition | null>(null)
+  const recognitionRef                    = useRef<any>(null)
 
   const SpeechRecognitionAPI =
     typeof window !== 'undefined'
@@ -52,8 +52,8 @@ export function useVoiceSearch(onResult?: (text: string) => void): UseVoiceSearc
 
     recognition.onstart = () => setIsListening(true)
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const text = Array.from(event.results)
+    recognition.onresult = (event: any) => {
+      const text = Array.from(event.results)F
         .map(result => result[0].transcript)
         .join('')
       setTranscript(text)
@@ -64,7 +64,7 @@ export function useVoiceSearch(onResult?: (text: string) => void): UseVoiceSearc
       }
     }
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognition.onerror = (event: any) => {
       setError(event.error === 'not-allowed'
         ? 'Microphone permission denied'
         : 'Voice recognition error'
