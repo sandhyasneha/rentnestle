@@ -1,30 +1,30 @@
-// GET /api/properties?city=Chennai&property_type=2bhk&min_rent=10000&max_rent=25000
-// GET /api/properties?lat=13.0827&lng=80.2707&radius_km=5  (near me)
-
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
-import { SearchFilters } from '@/types'
+import { createClient } from '@supabase/supabase-js'
+
+// Use direct client in API routes to avoid server/client confusion
+const getSupabase = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder'
+)
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
-    const supabase = createServerClient()
+    const supabase = getSupabase()
 
-    const city         = searchParams.get('city')
+    const city          = searchParams.get('city')
     const property_type = searchParams.get('property_type')
-    const min_rent     = searchParams.get('min_rent')
-    const max_rent     = searchParams.get('max_rent')
-    const furnishing   = searchParams.get('furnishing')
-    const tenant_pref  = searchParams.get('tenant_pref')
-    const food_pref    = searchParams.get('food_pref')
-    const lat          = searchParams.get('lat')
-    const lng          = searchParams.get('lng')
-    const radius_km    = searchParams.get('radius_km') || '5'
-    const page         = parseInt(searchParams.get('page') || '1')
-    const limit        = parseInt(searchParams.get('limit') || '20')
-    const offset       = (page - 1) * limit
+    const min_rent      = searchParams.get('min_rent')
+    const max_rent      = searchParams.get('max_rent')
+    const furnishing    = searchParams.get('furnishing')
+    const tenant_pref   = searchParams.get('tenant_pref')
+    const lat           = searchParams.get('lat')
+    const lng           = searchParams.get('lng')
+    const radius_km     = searchParams.get('radius_km') || '5'
+    const page          = parseInt(searchParams.get('page') || '1')
+    const limit         = parseInt(searchParams.get('limit') || '20')
+    const offset        = (page - 1) * limit
 
-    // Near me query uses PostGIS function
     if (lat && lng) {
       const { data, error } = await supabase
         .rpc('properties_near_me', {
@@ -32,17 +32,15 @@ export async function GET(req: Request) {
           lng: parseFloat(lng),
           radius_km: parseFloat(radius_km)
         })
-
       if (error) throw error
       return NextResponse.json({ properties: data, total: data?.length || 0 })
     }
 
-    // Standard filtered query
     let query = supabase
       .from('properties')
       .select('*, owner:profiles(full_name, phone, avatar_url, aadhaar_verified)', { count: 'exact' })
       .eq('status', 'active')
-      .order('boost_level', { ascending: false })  // boosted listings first
+      .order('boost_level', { ascending: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -52,7 +50,6 @@ export async function GET(req: Request) {
     if (max_rent)      query = query.lte('monthly_rent', parseInt(max_rent))
     if (furnishing)    query = query.eq('furnishing', furnishing)
     if (tenant_pref)   query = query.in('tenant_pref', [tenant_pref, 'any'])
-    if (food_pref)     query = query.eq('food_pref', food_pref)
 
     const { data, count, error } = await query
     if (error) throw error
@@ -70,13 +67,9 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/properties — create new listing
 export async function POST(req: Request) {
   try {
-    const supabase = createServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    const supabase = getSupabase()
     const body = await req.json()
     const { lat, lng, ...rest } = body
 
@@ -84,10 +77,7 @@ export async function POST(req: Request) {
       .from('properties')
       .insert({
         ...rest,
-        owner_id: user.id,
-        location: lat && lng
-          ? `SRID=4326;POINT(${lng} ${lat})`  // PostGIS WKT format
-          : null,
+        location: lat && lng ? `SRID=4326;POINT(${lng} ${lat})` : null,
         status: 'draft'
       })
       .select()
