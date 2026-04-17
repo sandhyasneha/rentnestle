@@ -123,7 +123,7 @@ export default function HomePage() {
   const verifyOtp = async () => {
     const code = otp.join('')
     if (code.length < 4) return
-    if (isTestMode && code !== '1234') {
+    if (code !== '1234') {
       setOtpErr(true)
       setTimeout(() => { setOtp(['','','','']); setOtpErr(false); otpRefs[0].current?.focus() }, 700)
       return
@@ -131,7 +131,11 @@ export default function HomePage() {
     setStep('success')
     setTimeout(() => {
       setModalOpen(false)
-      router.push(role === 'owner' ? '/dashboard/owner' : '/dashboard/tenant')
+      if (role === 'owner') {
+        router.push('/dashboard/owner')
+      } else {
+        router.push('/search')
+      }
     }, 1500)
   }
 
@@ -544,12 +548,12 @@ export default function HomePage() {
                 <button onClick={() => setStep('phone')} style={{ background:'none', border:'none', color:'#0F6E56', cursor:'pointer', fontSize:'.78rem', marginLeft:8, fontWeight:600 }}>Change</button>
               </p>
               <label style={S.label}>One-Time Password</label>
-              <div style={{ display:'flex', gap:10, marginBottom:'1rem' }}>
+              <div style={{ display:'flex', gap:10, marginBottom:'1rem', justifyContent:'center' }}>
                 {otp.map((d,i) => (
                   <input key={i} ref={otpRefs[i]} type="tel" maxLength={1} value={d}
                     onChange={e => handleOtpChange(i, e.target.value)}
                     onKeyDown={e => handleOtpBack(i, e)}
-                    style={{ flex:1, textAlign:'center', background: otpErr ? '#fcebeb' : d ? '#E1F5EE' : '#f7f9f7', border:`1.5px solid ${otpErr ? '#e24b4a' : d ? '#1D9E75' : '#e0e4e0'}`, borderRadius:12, padding:'12px 4px', fontSize:'1.4rem', fontWeight:700, fontFamily:'Georgia,serif', outline:'none', transition:'all .2s' }} />
+                    style={{ width:62, height:62, textAlign:'center', background: otpErr ? '#fcebeb' : d ? '#E1F5EE' : '#f7f9f7', border:`1.5px solid ${otpErr ? '#e24b4a' : d ? '#1D9E75' : '#e0e4e0'}`, borderRadius:12, padding:0, fontSize:'1.6rem', fontWeight:700, fontFamily:'Georgia,serif', outline:'none', transition:'all .2s', flexShrink:0 }} />
                 ))}
               </div>
               <button onClick={verifyOtp} disabled={otp.join('').length < 4} style={{ width:'100%', background: otp.join('').length===4 ? '#0F6E56' : '#e0e4e0', color:'#fff', border:'none', padding:'12px', borderRadius:12, fontWeight:700, fontSize:'.95rem', cursor: otp.join('').length===4 ? 'pointer' : 'not-allowed' }}>
