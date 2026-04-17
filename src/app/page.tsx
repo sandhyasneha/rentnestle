@@ -158,41 +158,7 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ── NAV ─────────────────────────────────────────── */}
-      <nav style={{ background:'#fff', borderBottom:'1px solid #e0e4e0', padding:'0 1.5rem', height:58, display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, zIndex:100 }}>
-        <div style={{ fontFamily:'Georgia,serif', fontSize:'1.4rem', fontWeight:700, color:'#0F6E56' }}>
-          Rent<span style={{ color:'#1a1a1a' }}>Nestle</span>
-        </div>
-        <div className="nav-desktop" style={{ display:'flex', gap:'1.5rem', alignItems:'center' }}>
-          <a href="/search"         style={{ fontSize:'.83rem', color:'#555', textDecoration:'none', fontWeight:500 }}>Find a Home</a>
-          <a href="/list-property"  style={{ fontSize:'.83rem', color:'#555', textDecoration:'none', fontWeight:500 }}>List Property</a>
-          <a href="#agreements"     style={{ fontSize:'.83rem', color:'#555', textDecoration:'none', fontWeight:500 }}>Agreements</a>
-          <a href="#plans"          style={{ fontSize:'.83rem', color:'#555', textDecoration:'none', fontWeight:500 }}>Plans</a>
-          <button onClick={() => openModal('tenant')} style={{ background:'#0F6E56', color:'#fff', padding:'.4rem 1rem', borderRadius:8, fontSize:'.83rem', fontWeight:600, border:'none', cursor:'pointer' }}>
-            Sign In / Register
-          </button>
-        </div>
-        {/* Mobile hamburger placeholder */}
-        <button className="nav-mobile" onClick={() => openModal('tenant')} style={{ display:'none', background:'#0F6E56', color:'#fff', padding:'6px 12px', borderRadius:8, fontSize:'.8rem', fontWeight:600, border:'none', cursor:'pointer' }}>
-          Sign In
-        </button>
-      </nav>
-
-      <style>{`
-        @media(max-width:680px){
-          .nav-desktop{display:none!important}
-          .nav-mobile{display:block!important}
-          .hero-grid{grid-template-columns:1fr!important}
-          .hero-phone{display:none!important}
-          .plans-grid{grid-template-columns:1fr!important}
-          .footer-grid{grid-template-columns:1fr 1fr!important}
-          body{padding-bottom:60px}
-          .bottom-nav{display:flex!important}
-          section{padding:2.5rem 1rem!important}
-        }
-      `}</style>
-
-      {/* ── HERO ────────────────────────────────────────── */}
+{/* ── HERO ────────────────────────────────────────── */}
       <section style={{ background:'linear-gradient(150deg,#eef8f4 0%,#fff 65%)', padding:'3.5rem 1.5rem 3rem' }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div className="hero-grid" style={{ display:'grid', gridTemplateColumns:'1fr 420px', gap:'3rem', alignItems:'center' }}>
