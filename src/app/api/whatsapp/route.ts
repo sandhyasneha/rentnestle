@@ -98,9 +98,3 @@ async function sendWhatsAppMessage(to: string, text: string) {
   })
 }
 
-// ── Helper: send WhatsApp notification to owner ───────────
-// Call this from other API routes when a new inquiry comes in
-export async function notifyOwnerWhatsApp(ownerPhone: string, tenantName: string, propertyTitle: string) {
-  const message = `🏠 *New Inquiry — RentNestle*\n\n*${tenantName}* is interested in your property:\n📌 ${propertyTitle}\n\nOpen your dashboard to view their profile and respond.\n👉 https://rentnesttle.com/dashboard/owner`
-  await sendWhatsAppMessage(`91${ownerPhone}`, message)
-}
