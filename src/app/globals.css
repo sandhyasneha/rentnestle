@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   RentNestle — Design Tokens
+   ============================================================ */
+:root {
+  --green:        #0F6E56;
+  --green-light:  #1D9E75;
+  --green-pale:   #E1F5EE;
+  --amber:        #BA7517;
+  --amber-pale:   #FAEEDA;
+  --text:         #1a1a1a;
+  --text-2:       #555555;
+  --text-3:       #999999;
+  --bg:           #ffffff;
+  --bg-2:         #f7f9f7;
+  --bg-3:         #f0f4f0;
+  --border:       #e0e4e0;
+  --radius:       12px;
+  --shadow:       0 2px 16px rgba(0, 0, 0, 0.07);
+  --shadow-md:    0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   Base Reset
+   ============================================================ */
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Typography
+   ============================================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+.text-green   { color: var(--green); }
+.bg-green     { background: var(--green); }
+.bg-green-pale { background: var(--green-pale); }
+
+/* ============================================================
+   Bottom Nav — mobile only
+   ============================================================ */
+.bottom-nav {
+  display: none;
+}
+@media (max-width: 680px) {
+  .bottom-nav {
+    display: flex;
+  }
+  body {
+    padding-bottom: 60px;
+  }
+}
+
+/* ============================================================
+   PWA Standalone Mode — hide browser chrome artifacts
+   ============================================================ */
+@media (display-mode: standalone) {
+  .pwa-hide { display: none; }
+  body { padding-top: env(safe-area-inset-top); }
+}
+
+/* ============================================================
+   Custom Scrollbar (desktop)
+   ============================================================ */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #ccc; }
+
+/* ============================================================
+   OTP Input Boxes
+   ============================================================ */
+.otp-input {
+  width: 100%;
+  text-align: center;
+  background: var(--bg-2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 4px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: Georgia, serif;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.otp-input:focus      { border-color: var(--green); background: #fff; }
+.otp-input.filled     { border-color: var(--green-light); background: var(--green-pale); }
+.otp-input.error      { border-color: #e24b4a; background: #fcebeb; }
+
+/* ============================================================
+   Property Card Hover
+   ============================================================ */
+.property-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.property-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================================
+   Mic Pulse Animation
+   ============================================================ */
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(226, 75, 74, 0.3); }
+  50%       { box-shadow: 0 0 0 8px rgba(226, 75, 74, 0.0); }
+}
+.mic-listening {
+  border-color: #e24b4a !important;
+  background: #fcebeb !important;
+  animation: mic-pulse 1s infinite;
+}
+
+/* ============================================================
+   Skeleton Loading (listings page)
+   ============================================================ */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ============================================================
+   Toast Notifications (Sonner)
+   ============================================================ */
+[data-sonner-toaster] {
+  --border-radius: 12px;
+  --normal-bg: #fff;
+  --success-bg: var(--green-pale);
+  --success-border: var(--green);
+  --success-text: var(--green);
+}
