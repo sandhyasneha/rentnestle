@@ -34,7 +34,7 @@ export default function HomePage() {
   const [listening,      setListening]      = useState(false)
   const [selLang,        setSelLang]        = useState<VoiceLang>('en-IN')
   const [langPopOpen,    setLangPopOpen]    = useState(false)
-  const recognitionRef                      = useRef<SpeechRecognition | null>(null)
+  const recognitionRef                      = useRef<any>(null)
   const micRef                              = useRef<HTMLDivElement>(null)
 
   // OTP modal
