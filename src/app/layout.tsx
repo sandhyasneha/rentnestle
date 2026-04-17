@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import Navbar from '@/components/layout/Navbar'
+import Footer from '@/components/layout/Footer'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -10,11 +11,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'RentNestle',
-  },
-  openGraph: {
-    title: 'RentNestle — Zero Brokerage Rentals India',
-    description: 'AI-powered rental portal. Zero brokerage. Digital agreements.',
-    type: 'website',
   },
 }
 
@@ -28,9 +24,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Navbar />
-        {children}
+        <main style={{ flex: 1 }}>
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   )
