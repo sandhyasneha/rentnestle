@@ -4,13 +4,31 @@ import Footer from '@/components/layout/Footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'RentNestle — Zero Brokerage Rentals',
+  title: 'RentNestle — Zero Brokerage Rentals India',
   description: 'Find your perfect home with zero brokerage, AI-powered listings, and instant digital agreements across India.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/icon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'RentNestle',
+  },
+  openGraph: {
+    title: 'RentNestle — Zero Brokerage Rentals',
+    description: 'AI-powered rental portal. Zero brokerage. Digital agreements.',
+    url: 'https://www.rentnestle.com',
+    siteName: 'RentNestle',
+    images: [{ url: '/icons/icon-512.png' }],
+    type: 'website',
   },
 }
 
