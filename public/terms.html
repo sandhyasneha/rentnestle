@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Terms of Service — RentNestle</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #0F6E56;
+      --green-light:#1D9E75;
+      --green-pale: #E1F5EE;
+      --text:       #1a1a1a;
+      --text-2:     #444;
+      --text-3:     #777;
+      --border:     #e0e4e0;
+      --bg:         #fff;
+      --bg-2:       #f7f9f7;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    nav {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-family: Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--green);
+      text-decoration: none;
+    }
+    .logo span { color: var(--text); }
+    .nav-link {
+      font-size: .85rem;
+      color: var(--text-2);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .nav-link:hover { color: var(--green); }
+
+    .hero {
+      background: linear-gradient(150deg, #eef8f4 0%, #fff 70%);
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-pale);
+      color: var(--green);
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .3rem .9rem;
+      border-radius: 20px;
+      margin-bottom: 1.25rem;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-family: Georgia, serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: .75rem;
+    }
+    .hero p { font-size: 1rem; color: var(--text-3); max-width: 540px; margin: 0 auto; }
+    .hero-meta { margin-top: 1.25rem; font-size: .82rem; color: var(--text-3); }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 3rem 2rem; }
+
+    .company-banner {
+      background: var(--green);
+      color: #fff;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+      font-size: .88rem;
+      line-height: 1.7;
+    }
+    .company-banner strong { font-size: 1rem; display: block; margin-bottom: .25rem; }
+
+    .toc {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .toc h3 { font-family: Georgia, serif; font-size: .95rem; font-weight: 700; margin-bottom: .75rem; }
+    .toc ol { padding-left: 1.2rem; }
+    .toc li { margin-bottom: .35rem; }
+    .toc a { font-size: .85rem; color: var(--green); text-decoration: none; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+
+    .section { margin-bottom: 2.75rem; padding-bottom: 2.75rem; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .section-num {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      margin-bottom: .6rem;
+      letter-spacing: .5px;
+    }
+    .section h2 {
+      font-family: Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -.3px;
+    }
+    .section p { color: var(--text-2); margin-bottom: .9rem; font-size: .95rem; }
+    .section ul, .section ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+    .section li { color: var(--text-2); font-size: .95rem; margin-bottom: .4rem; }
+    .section strong { color: var(--text); }
+
+    .highlight-box {
+      background: var(--green-pale);
+      border-left: 3px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: .9rem;
+      color: #0a5c47;
+      font-weight: 500;
+    }
+
+    .warning-box {
+      background: #FEF3C7;
+      border-left: 3px solid #D97706;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: .9rem;
+      color: #92400E;
+    }
+
+    .contact-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+    }
+    .contact-card p { margin-bottom: .4rem !important; font-size: .9rem !important; }
+
+    footer {
+      background: #1a1a1a;
+      color: #ccc;
+      padding: 2.5rem 2rem;
+    }
+    .footer-inner { max-width: 860px; margin: 0 auto; }
+    .footer-logo {
+      font-family: Georgia, serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--green-light);
+      margin-bottom: .5rem;
+    }
+    .footer-logo span { color: #fff; }
+    .footer-company { font-size: .82rem; color: #aaa; line-height: 1.8; margin-bottom: 1.25rem; max-width: 520px; }
+    .footer-divider { border: none; border-top: 1px solid #333; margin: 1.25rem 0; }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .5rem;
+      font-size: .75rem;
+      color: #666;
+    }
+    .footer-links { display: flex; gap: 1.25rem; }
+    .footer-links a { color: #888; text-decoration: none; font-size: .75rem; }
+    .footer-links a:hover { color: var(--green-light); }
+
+    @media(max-width: 600px) {
+      .container { padding: 2rem 1rem; }
+      .hero { padding: 2.5rem 1rem 2rem; }
+      nav { padding: 0 1rem; }
+      footer { padding: 2rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="https://www.rentnestle.com" class="logo">Rent<span>Nestle</span></a>
+    <a href="https://www.rentnestle.com" class="nav-link">← Back to Home</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">Legal</div>
+    <h1>Terms of Service</h1>
+    <p>Please read these terms carefully before using RentNestle. By using our platform, you agree to be bound by these terms.</p>
+    <p class="hero-meta">Last updated: April 2025 &nbsp;·&nbsp; Effective: April 2025</p>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+
+    <!-- COMPANY BANNER -->
+    <div class="company-banner">
+      <strong>Techsoft W3 India Private Limited</strong>
+      CIN: U72300TN2014PTC096558 &nbsp;|&nbsp; Office No 222, Business Centre, 31A Cathedral Garden Road, Nungambakkam, Chennai – 600034, Tamil Nadu, India<br/>
+      RentNestle.com is a product owned and operated by Techsoft W3 India Private Limited.
+    </div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="toc">
+      <h3>📋 Table of Contents</h3>
+      <ol>
+        <li><a href="#s1">Acceptance of Terms</a></li>
+        <li><a href="#s2">About RentNestle</a></li>
+        <li><a href="#s3">User Accounts & Registration</a></li>
+        <li><a href="#s4">Tenant Terms</a></li>
+        <li><a href="#s5">Landlord / Owner Terms</a></li>
+        <li><a href="#s6">Digital Agreements & E-Sign</a></li>
+        <li><a href="#s7">Payments & Plans</a></li>
+        <li><a href="#s8">Prohibited Activities</a></li>
+        <li><a href="#s9">Intellectual Property</a></li>
+        <li><a href="#s10">Disclaimers & Limitation of Liability</a></li>
+        <li><a href="#s11">Dispute Resolution</a></li>
+        <li><a href="#s12">Governing Law</a></li>
+        <li><a href="#s13">Changes to Terms</a></li>
+        <li><a href="#s14">Contact & Grievance Officer</a></li>
+      </ol>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="section" id="s1">
+      <span class="section-num">01</span>
+      <h2>Acceptance of Terms</h2>
+      <p>By accessing or using the RentNestle platform at <a href="https://www.rentnestle.com" style="color:var(--green)">www.rentnestle.com</a> (the "Platform"), registering an account, or using any of our services, you ("User") agree to be legally bound by these Terms of Service ("Terms").</p>
+      <p>These Terms constitute a legally binding agreement between you and <strong>Techsoft W3 India Private Limited</strong> ("Company", "we", "us", or "our"), the owner and operator of RentNestle.</p>
+      <div class="warning-box">
+        ⚠️ If you do not agree to these Terms, please do not use the RentNestle platform or any of its services.
+      </div>
+      <p>Users must be at least 18 years of age to register and use RentNestle. By using the platform, you represent that you are 18 years of age or older.</p>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="section" id="s2">
+      <span class="section-num">02</span>
+      <h2>About RentNestle</h2>
+      <p>RentNestle is an AI-powered online rental portal that connects landlords and tenants across India. Our platform provides:</p>
+      <ul>
+        <li>Zero-brokerage property listings and search</li>
+        <li>Digital rental agreements with Aadhaar e-sign and e-stamp</li>
+        <li>Tenant identity verification (Aadhaar KYC, PAN, police verification)</li>
+        <li>AI-powered property descriptions and WhatsApp notifications</li>
+        <li>Automated HRA receipt generation</li>
+        <li>Voice search in English, Tamil, and Hindi</li>
+      </ul>
+      <div class="highlight-box">
+        🛡️ RentNestle is a technology platform that facilitates connections between landlords and tenants. We are not a real estate broker, agent, or party to any rental agreement between users.
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="section" id="s3">
+      <span class="section-num">03</span>
+      <h2>User Accounts & Registration</h2>
+      <p>To use RentNestle, you must register using your mobile number. By registering, you agree to:</p>
+      <ul>
+        <li>Provide accurate, current, and complete information during registration</li>
+        <li>Maintain and update your information to keep it accurate</li>
+        <li>Keep your account credentials secure and not share them with others</li>
+        <li>Accept responsibility for all activities that occur under your account</li>
+        <li>Notify us immediately of any unauthorised use of your account</li>
+      </ul>
+      <p>You may register as a <strong>Tenant</strong> or <strong>Owner (Landlord)</strong>. Each account type has specific features and responsibilities outlined in these Terms.</p>
+      <p>We reserve the right to suspend or terminate any account that violates these Terms or is found to be fraudulent, without prior notice.</p>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="section" id="s4">
+      <span class="section-num">04</span>
+      <h2>Tenant Terms</h2>
+      <p>As a tenant using RentNestle, you agree to:</p>
+      <ul>
+        <li>Use the platform only to search for genuine rental accommodation</li>
+        <li>Provide accurate information during KYC and identity verification</li>
+        <li>Contact landlords only for legitimate rental inquiries</li>
+        <li>Not spam, harass, or misuse the direct contact features</li>
+        <li>Honour any rental agreements signed through the platform</li>
+        <li>Not share landlord contact details obtained through the platform with third parties</li>
+      </ul>
+      <p>RentNestle's <strong>zero brokerage</strong> policy means tenants are never charged a brokerage fee for connecting with landlords. Plan subscription fees (if applicable) are for value-added features only.</p>
+    </div>
+
+    <!-- SECTION 5 -->
+    <div class="section" id="s5">
+      <span class="section-num">05</span>
+      <h2>Landlord / Owner Terms</h2>
+      <p>As a landlord or property owner listing on RentNestle, you agree to:</p>
+      <ul>
+        <li>List only properties that you legally own or have authority to rent</li>
+        <li>Provide accurate property details, photos, and pricing</li>
+        <li>Not list the same property on multiple accounts simultaneously</li>
+        <li>Respond to tenant inquiries in a timely and professional manner</li>
+        <li>Not discriminate against tenants on the basis of religion, caste, gender, or nationality</li>
+        <li>Comply with all applicable local rental laws and regulations</li>
+        <li>Remove listings promptly once a property has been rented</li>
+      </ul>
+      <p>Techsoft W3 India Private Limited reserves the right to remove any listing that violates these terms, contains false information, or is reported by multiple users.</p>
+    </div>
+
+    <!-- SECTION 6 -->
+    <div class="section" id="s6">
+      <span class="section-num">06</span>
+      <h2>Digital Agreements & E-Sign</h2>
+      <p>RentNestle facilitates the creation of digital rental agreements using:</p>
+      <ul>
+        <li><strong>Aadhaar-based e-Sign</strong> — legally equivalent to a handwritten signature under the Information Technology Act, 2000</li>
+        <li><strong>Digital Stamp Certificates</strong> — issued through SHCIL or authorised state portals, satisfying stamp duty requirements</li>
+        <li><strong>11-Month Leave and Licence Agreements</strong> — designed to operate without mandatory physical registration</li>
+      </ul>
+      <p>By using the digital agreement feature, you acknowledge that:</p>
+      <ul>
+        <li>You have read and understood the agreement terms before signing</li>
+        <li>Your Aadhaar OTP-based signature is legally binding</li>
+        <li>RentNestle is a technology facilitator and not a legal advisor</li>
+        <li>You should consult a lawyer for complex or high-value agreements</li>
+      </ul>
+      <div class="highlight-box">
+        📄 Digital agreements generated on RentNestle are legally valid under the Information Technology Act, 2000 and the Indian Stamp Act, as applicable in your state.
+      </div>
+    </div>
+
+    <!-- SECTION 7 -->
+    <div class="section" id="s7">
+      <span class="section-num">07</span>
+      <h2>Payments & Plans</h2>
+      <p>RentNestle offers both free and paid subscription plans for tenants and landlords. By purchasing a plan, you agree to:</p>
+      <ul>
+        <li>Pay the applicable fees as displayed at the time of purchase</li>
+        <li>All payments are processed securely through Razorpay</li>
+        <li>Plan fees are non-refundable once the plan is activated and features are used</li>
+        <li>Stamp duty payments made on your behalf are passed through at cost with no markup</li>
+        <li>GST will be applicable on plan fees as per Indian tax law</li>
+      </ul>
+      <p><strong>Refund Policy:</strong> If a technical error on our part prevents you from accessing paid features, you may request a refund within 7 days by contacting support@rentnestle.com. Refunds are processed within 5–7 business days.</p>
+    </div>
+
+    <!-- SECTION 8 -->
+    <div class="section" id="s8">
+      <span class="section-num">08</span>
+      <h2>Prohibited Activities</h2>
+      <p>You agree not to use RentNestle for any of the following:</p>
+      <ul>
+        <li>Posting false, misleading, or fraudulent property listings</li>
+        <li>Impersonating another person or entity</li>
+        <li>Collecting or harvesting personal data of other users</li>
+        <li>Using the platform for any illegal activity under Indian law</li>
+        <li>Attempting to hack, scrape, or reverse engineer the platform</li>
+        <li>Sending unsolicited commercial messages (spam) to other users</li>
+        <li>Charging tenants any brokerage or finder's fee through our platform</li>
+        <li>Creating multiple accounts to circumvent plan limits or bans</li>
+        <li>Uploading content that is defamatory, obscene, or violates third-party rights</li>
+        <li>Interfering with the security, integrity, or performance of the platform</li>
+      </ul>
+      <p>Violation of any of these prohibitions may result in immediate account termination and may be reported to appropriate law enforcement authorities.</p>
+    </div>
+
+    <!-- SECTION 9 -->
+    <div class="section" id="s9">
+      <span class="section-num">09</span>
+      <h2>Intellectual Property</h2>
+      <p>All content on the RentNestle platform — including but not limited to the logo, brand name, website design, software, AI models, and proprietary algorithms — is the intellectual property of <strong>Techsoft W3 India Private Limited</strong> and is protected under applicable Indian and international intellectual property laws.</p>
+      <p>You may not copy, reproduce, distribute, or create derivative works from any RentNestle content without our prior written consent.</p>
+      <p>By submitting content (property photos, descriptions, reviews) to RentNestle, you grant Techsoft W3 India Private Limited a non-exclusive, royalty-free licence to use, display, and distribute that content on the platform and for marketing purposes.</p>
+    </div>
+
+    <!-- SECTION 10 -->
+    <div class="section" id="s10">
+      <span class="section-num">10</span>
+      <h2>Disclaimers & Limitation of Liability</h2>
+      <p>RentNestle is provided on an "as is" and "as available" basis. <strong>Techsoft W3 India Private Limited</strong> makes no warranties, express or implied, regarding:</p>
+      <ul>
+        <li>The accuracy or completeness of property listings</li>
+        <li>The identity, creditworthiness, or suitability of any tenant or landlord</li>
+        <li>The availability or uninterrupted operation of the platform</li>
+        <li>The outcome of any rental transaction facilitated through the platform</li>
+      </ul>
+      <p>To the maximum extent permitted by applicable law, Techsoft W3 India Private Limited shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform.</p>
+      <p>Our total liability to you for any claim arising from your use of RentNestle shall not exceed the amount you paid to us in the 3 months preceding the claim.</p>
+      <div class="warning-box">
+        ⚠️ RentNestle is a technology platform and intermediary. We are not responsible for disputes between tenants and landlords. All rental transactions are between the respective parties.
+      </div>
+    </div>
+
+    <!-- SECTION 11 -->
+    <div class="section" id="s11">
+      <span class="section-num">11</span>
+      <h2>Dispute Resolution</h2>
+      <p>In the event of any dispute between users of the platform, we encourage you to first attempt to resolve it amicably. RentNestle may, at its discretion, provide mediation assistance but is not obligated to do so.</p>
+      <p>Any dispute, claim, or controversy arising from these Terms or your use of the platform shall first be addressed through our Grievance Officer. If unresolved, disputes shall be referred to arbitration under the Arbitration and Conciliation Act, 1996.</p>
+      <p>The seat of arbitration shall be Chennai, Tamil Nadu, India.</p>
+    </div>
+
+    <!-- SECTION 12 -->
+    <div class="section" id="s12">
+      <span class="section-num">12</span>
+      <h2>Governing Law</h2>
+      <p>These Terms of Service shall be governed by and construed in accordance with the laws of India, including but not limited to:</p>
+      <ul>
+        <li>The Information Technology Act, 2000</li>
+        <li>The Digital Personal Data Protection Act, 2023</li>
+        <li>The Indian Contract Act, 1872</li>
+        <li>The Consumer Protection Act, 2019</li>
+      </ul>
+      <p>The courts of <strong>Chennai, Tamil Nadu, India</strong> shall have exclusive jurisdiction over any disputes arising from these Terms.</p>
+    </div>
+
+    <!-- SECTION 13 -->
+    <div class="section" id="s13">
+      <span class="section-num">13</span>
+      <h2>Changes to Terms</h2>
+      <p>Techsoft W3 India Private Limited reserves the right to modify these Terms at any time. When we make material changes, we will:</p>
+      <ul>
+        <li>Update the "Last Updated" date at the top of this page</li>
+        <li>Send a notification to registered users via WhatsApp or SMS</li>
+        <li>Display a notice on the RentNestle homepage for at least 14 days</li>
+      </ul>
+      <p>Your continued use of RentNestle after the effective date of the revised Terms constitutes your acceptance of the changes. If you do not agree to the revised Terms, you must stop using the platform.</p>
+    </div>
+
+    <!-- SECTION 14 -->
+    <div class="section" id="s14">
+      <span class="section-num">14</span>
+      <h2>Contact & Grievance Officer</h2>
+      <p>For any questions about these Terms, or to raise a grievance, please contact:</p>
+      <div class="contact-card">
+        <p><strong>Company:</strong> Techsoft W3 India Private Limited</p>
+        <p><strong>Platform:</strong> RentNestle (www.rentnestle.com)</p>
+        <p><strong>CIN:</strong> U72300TN2014PTC096558</p>
+        <p><strong>Email:</strong> legal@rentnestle.com</p>
+        <p><strong>Support:</strong> support@rentnestle.com</p>
+        <p style="margin-top:.75rem"><strong>Registered Office:</strong></p>
+        <p>Office No 222, Business Centre,</p>
+        <p>31A Cathedral Garden Road,</p>
+        <p>Nungambakkam, Chennai – 600034</p>
+        <p>Tamil Nadu, India</p>
+        <p style="margin-top:.5rem"><strong>Response Time:</strong> Within 30 business days</p>
+      </div>
+    </div>
+
+  </div><!-- end container -->
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">Rent<span>Nestle</span></div>
+      <div class="footer-company">
+        RentNestle.com is a product of <strong style="color:#ddd">Techsoft W3 India Private Limited</strong><br/>
+        CIN: U72300TN2014PTC096558<br/>
+        Office No 222, Business Centre, 31A Cathedral Garden Road,<br/>
+        Nungambakkam, Chennai – 600034, Tamil Nadu, India
+      </div>
+      <hr class="footer-divider"/>
+      <div class="footer-bottom">
+        <span>© 2025 Techsoft W3 India Private Limited. All rights reserved.</span>
+        <div class="footer-links">
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="/terms.html">Terms of Service</a>
+          <a href="#">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
