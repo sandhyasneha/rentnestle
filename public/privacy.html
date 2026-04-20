@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Privacy Policy — RentNestle</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #0F6E56;
+      --green-light:#1D9E75;
+      --green-pale: #E1F5EE;
+      --text:       #1a1a1a;
+      --text-2:     #444;
+      --text-3:     #777;
+      --border:     #e0e4e0;
+      --bg:         #fff;
+      --bg-2:       #f7f9f7;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    /* NAV */
+    nav {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-family: Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--green);
+      text-decoration: none;
+    }
+    .logo span { color: var(--text); }
+    .nav-link {
+      font-size: .85rem;
+      color: var(--text-2);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .nav-link:hover { color: var(--green); }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(150deg, #eef8f4 0%, #fff 70%);
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-pale);
+      color: var(--green);
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .3rem .9rem;
+      border-radius: 20px;
+      margin-bottom: 1.25rem;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-family: Georgia, serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: .75rem;
+      color: var(--text);
+    }
+    .hero p {
+      font-size: 1rem;
+      color: var(--text-3);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .hero-meta {
+      margin-top: 1.25rem;
+      font-size: .82rem;
+      color: var(--text-3);
+    }
+
+    /* CONTENT */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    .toc {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .toc h3 {
+      font-family: Georgia, serif;
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: .75rem;
+      color: var(--text);
+    }
+    .toc ol {
+      padding-left: 1.2rem;
+    }
+    .toc li {
+      margin-bottom: .35rem;
+    }
+    .toc a {
+      font-size: .85rem;
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .toc a:hover { text-decoration: underline; }
+
+    .section {
+      margin-bottom: 2.75rem;
+      padding-bottom: 2.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child {
+      border-bottom: none;
+    }
+    .section-num {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      margin-bottom: .6rem;
+      letter-spacing: .5px;
+    }
+    .section h2 {
+      font-family: Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text);
+      letter-spacing: -.3px;
+    }
+    .section p {
+      color: var(--text-2);
+      margin-bottom: .9rem;
+      font-size: .95rem;
+    }
+    .section ul, .section ol {
+      padding-left: 1.4rem;
+      margin-bottom: .9rem;
+    }
+    .section li {
+      color: var(--text-2);
+      font-size: .95rem;
+      margin-bottom: .4rem;
+    }
+    .section strong { color: var(--text); }
+
+    .highlight-box {
+      background: var(--green-pale);
+      border-left: 3px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: .9rem;
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    .contact-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+    }
+    .contact-card p {
+      margin-bottom: .4rem !important;
+      font-size: .9rem !important;
+    }
+
+    /* FOOTER */
+    footer {
+      background: #1a1a1a;
+      color: #ccc;
+      padding: 2.5rem 2rem;
+    }
+    .footer-inner {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .footer-logo {
+      font-family: Georgia, serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--green-light);
+      margin-bottom: .5rem;
+    }
+    .footer-logo span { color: #fff; }
+    .footer-company {
+      font-size: .82rem;
+      color: #aaa;
+      line-height: 1.8;
+      margin-bottom: 1.25rem;
+      max-width: 520px;
+    }
+    .footer-divider {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 1.25rem 0;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .5rem;
+      font-size: .75rem;
+      color: #666;
+    }
+    .footer-links {
+      display: flex;
+      gap: 1.25rem;
+    }
+    .footer-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: .75rem;
+    }
+    .footer-links a:hover { color: var(--green-light); }
+
+    @media(max-width: 600px) {
+      .container { padding: 2rem 1rem; }
+      .hero { padding: 2.5rem 1rem 2rem; }
+      nav { padding: 0 1rem; }
+      footer { padding: 2rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="https://www.rentnestle.com" class="logo">Rent<span>Nestle</span></a>
+    <a href="https://www.rentnestle.com" class="nav-link">← Back to Home</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">Legal</div>
+    <h1>Privacy Policy</h1>
+    <p>How we collect, use, and protect your personal information on RentNestle.</p>
+    <p class="hero-meta">Last updated: April 2025 &nbsp;·&nbsp; Effective: April 2025</p>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="toc">
+      <h3>📋 Table of Contents</h3>
+      <ol>
+        <li><a href="#s1">Information We Collect</a></li>
+        <li><a href="#s2">How We Use Your Information</a></li>
+        <li><a href="#s3">WhatsApp & Communication</a></li>
+        <li><a href="#s4">Data Sharing & Third Parties</a></li>
+        <li><a href="#s5">Data Security</a></li>
+        <li><a href="#s6">Your Rights</a></li>
+        <li><a href="#s7">Cookies & Tracking</a></li>
+        <li><a href="#s8">Children's Privacy</a></li>
+        <li><a href="#s9">Changes to This Policy</a></li>
+        <li><a href="#s10">Contact Us</a></li>
+      </ol>
+    </div>
+
+    <div class="highlight-box">
+      🛡️ RentNestle is committed to protecting your privacy. We never sell your personal data to third parties. Your information is used solely to provide and improve our rental services.
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="section" id="s1">
+      <span class="section-num">01</span>
+      <h2>Information We Collect</h2>
+      <p>When you use RentNestle, we collect the following types of information:</p>
+      <ul>
+        <li><strong>Personal Identification:</strong> Name, mobile number, email address, and profile photo.</li>
+        <li><strong>Identity Verification:</strong> Aadhaar number (last 4 digits only), PAN card details, for KYC verification purposes.</li>
+        <li><strong>Property Information:</strong> Address, photos, rent details, and amenity information provided by landlords when listing a property.</li>
+        <li><strong>Location Data:</strong> With your permission, we collect your device's location to show nearby properties and enable Street View features.</li>
+        <li><strong>Usage Data:</strong> Pages visited, searches performed, listings viewed, and interactions with the platform.</li>
+        <li><strong>Device Information:</strong> Browser type, operating system, IP address, and device identifiers.</li>
+        <li><strong>Communication Data:</strong> Messages sent through our platform between tenants and landlords.</li>
+        <li><strong>Payment Information:</strong> Transaction details for plan purchases and stamp duty payments (processed securely through Razorpay — we do not store card details).</li>
+      </ul>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="section" id="s2">
+      <span class="section-num">02</span>
+      <h2>How We Use Your Information</h2>
+      <p>We use the information we collect to:</p>
+      <ul>
+        <li>Create and manage your RentNestle account</li>
+        <li>Connect tenants with landlords for rental properties</li>
+        <li>Generate and process digital rental agreements with Aadhaar e-sign and e-stamp</li>
+        <li>Verify tenant and landlord identities for safety</li>
+        <li>Send OTP messages for authentication via SMS or WhatsApp</li>
+        <li>Send automated HRA receipts, agreement notifications, and platform updates</li>
+        <li>Provide AI-powered property descriptions and tenant matching</li>
+        <li>Improve our platform through analytics and usage data</li>
+        <li>Comply with legal obligations under Indian law</li>
+        <li>Prevent fraud and maintain platform security</li>
+      </ul>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="section" id="s3">
+      <span class="section-num">03</span>
+      <h2>WhatsApp & Communication</h2>
+      <p>RentNestle uses the <strong>Meta WhatsApp Business API</strong> to send you important notifications including:</p>
+      <ul>
+        <li>OTP verification messages for login and registration</li>
+        <li>New inquiry alerts for landlords</li>
+        <li>Agreement signing reminders and confirmations</li>
+        <li>Monthly HRA receipt delivery</li>
+        <li>Property visit scheduling confirmations</li>
+        <li>AI-powered responses to your WhatsApp queries in English, Tamil, and Hindi</li>
+      </ul>
+      <p>By registering on RentNestle with your mobile number, you consent to receive these WhatsApp messages. You may opt out at any time by contacting us or replying <strong>STOP</strong> to any WhatsApp message.</p>
+      <p>We do not use your WhatsApp number for marketing or advertising purposes without your explicit consent.</p>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="section" id="s4">
+      <span class="section-num">04</span>
+      <h2>Data Sharing & Third Parties</h2>
+      <p>We share your information only with trusted service providers necessary to deliver our services:</p>
+      <ul>
+        <li><strong>Supabase</strong> — Secure cloud database and authentication</li>
+        <li><strong>MSG91 / Twilio</strong> — SMS OTP delivery</li>
+        <li><strong>Meta (WhatsApp)</strong> — WhatsApp Business messaging</li>
+        <li><strong>Digio / Leegality</strong> — Aadhaar e-sign and digital stamping</li>
+        <li><strong>Razorpay</strong> — Secure payment processing</li>
+        <li><strong>Google</strong> — Maps, Street View, and Places Autocomplete</li>
+        <li><strong>OpenAI</strong> — AI-powered listing descriptions and chatbot</li>
+        <li><strong>Vercel</strong> — Website hosting and deployment</li>
+      </ul>
+      <p>All third-party providers are contractually bound to protect your data and use it only for the specified purpose. We <strong>never sell</strong> your personal data to advertisers, data brokers, or any other third party.</p>
+      <p>We may disclose your information to government authorities or law enforcement if required by Indian law, court order, or legal process.</p>
+    </div>
+
+    <!-- SECTION 5 -->
+    <div class="section" id="s5">
+      <span class="section-num">05</span>
+      <h2>Data Security</h2>
+      <p>We implement industry-standard security measures to protect your data:</p>
+      <ul>
+        <li>All data is encrypted in transit using TLS/SSL (HTTPS)</li>
+        <li>Database access is protected with Row Level Security (RLS)</li>
+        <li>Aadhaar and KYC documents are stored in private, encrypted storage buckets</li>
+        <li>API keys and secrets are never exposed to the client</li>
+        <li>Regular security audits and vulnerability assessments</li>
+        <li>OTP-based authentication — no passwords stored</li>
+      </ul>
+      <p>While we take every precaution, no internet transmission is 100% secure. In the event of a data breach, we will notify affected users within 72 hours as required by applicable law.</p>
+    </div>
+
+    <!-- SECTION 6 -->
+    <div class="section" id="s6">
+      <span class="section-num">06</span>
+      <h2>Your Rights</h2>
+      <p>Under the Digital Personal Data Protection Act, 2023 (DPDPA) and applicable Indian law, you have the right to:</p>
+      <ul>
+        <li><strong>Access:</strong> Request a copy of the personal data we hold about you</li>
+        <li><strong>Correction:</strong> Request correction of inaccurate or incomplete data</li>
+        <li><strong>Deletion:</strong> Request deletion of your account and associated data</li>
+        <li><strong>Portability:</strong> Request your data in a machine-readable format</li>
+        <li><strong>Withdraw Consent:</strong> Withdraw consent for data processing at any time</li>
+        <li><strong>Grievance Redressal:</strong> Lodge a complaint with our Grievance Officer</li>
+      </ul>
+      <p>To exercise any of these rights, contact us at <strong>privacy@rentnestle.com</strong>. We will respond within 30 days.</p>
+    </div>
+
+    <!-- SECTION 7 -->
+    <div class="section" id="s7">
+      <span class="section-num">07</span>
+      <h2>Cookies & Tracking</h2>
+      <p>RentNestle uses essential cookies and local storage to:</p>
+      <ul>
+        <li>Maintain your login session</li>
+        <li>Remember your search preferences and filters</li>
+        <li>Store your language preference (English, Tamil, Hindi)</li>
+        <li>Enable Progressive Web App (PWA) functionality for offline use</li>
+      </ul>
+      <p>We use <strong>Vercel Analytics</strong> for anonymous usage statistics. This data does not identify individual users. We do not use advertising cookies or third-party tracking pixels.</p>
+      <p>You can clear cookies at any time through your browser settings. Disabling essential cookies may affect platform functionality.</p>
+    </div>
+
+    <!-- SECTION 8 -->
+    <div class="section" id="s8">
+      <span class="section-num">08</span>
+      <h2>Children's Privacy</h2>
+      <p>RentNestle is intended for users who are 18 years of age or older. We do not knowingly collect personal information from minors under the age of 18.</p>
+      <p>If you believe a minor has provided us with personal information, please contact us immediately at <strong>privacy@rentnestle.com</strong> and we will delete the information promptly.</p>
+    </div>
+
+    <!-- SECTION 9 -->
+    <div class="section" id="s9">
+      <span class="section-num">09</span>
+      <h2>Changes to This Policy</h2>
+      <p>We may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. When we make material changes, we will:</p>
+      <ul>
+        <li>Update the "Last Updated" date at the top of this page</li>
+        <li>Send a notification via WhatsApp or SMS to registered users</li>
+        <li>Display a notice on the RentNestle homepage</li>
+      </ul>
+      <p>Your continued use of RentNestle after the effective date of the revised policy constitutes your acceptance of the changes.</p>
+    </div>
+
+    <!-- SECTION 10 -->
+    <div class="section" id="s10">
+      <span class="section-num">10</span>
+      <h2>Contact Us</h2>
+      <p>For any privacy-related questions, concerns, or to exercise your data rights, please contact our Grievance Officer:</p>
+      <div class="contact-card">
+        <p><strong>Platform:</strong> RentNestle</p>
+        <p><strong>Email:</strong> privacy@rentnestle.com</p>
+        <p><strong>Website:</strong> <a href="https://www.rentnestle.com" style="color: #0F6E56;">www.rentnestle.com</a></p>
+        <p style="margin-top: .75rem;"><strong>Registered Office:</strong></p>
+        <p>Techsoft W3 India Private Limited</p>
+        <p>CIN: U72300TN2014PTC096558</p>
+        <p>Office No 222, Business Centre,</p>
+        <p>31A Cathedral Garden Road,</p>
+        <p>Nungambakkam, Chennai – 600034</p>
+        <p>Tamil Nadu, India</p>
+        <p style="margin-top: .5rem;"><strong>Response Time:</strong> Within 30 business days</p>
+      </div>
+    </div>
+
+  </div><!-- end container -->
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">Rent<span>Nestle</span></div>
+      <div class="footer-company">
+        RentNestle.com is a product of <strong style="color: #ddd;">Techsoft W3 India Private Limited</strong><br/>
+        CIN: U72300TN2014PTC096558<br/>
+        Office No 222, Business Centre, 31A Cathedral Garden Road,<br/>
+        Nungambakkam, Chennai – 600034, Tamil Nadu, India
+      </div>
+      <hr class="footer-divider"/>
+      <div class="footer-bottom">
+        <span>© 2025 Techsoft W3 India Private Limited. All rights reserved.</span>
+        <div class="footer-links">
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+          <a href="#">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
