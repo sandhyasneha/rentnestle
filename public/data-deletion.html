@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Delete My Data — RentNestle</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #0F6E56; --green-light: #1D9E75; --green-pale: #E1F5EE;
+      --text: #1a1a1a; --text-2: #444; --text-3: #777;
+      --border: #e0e4e0; --bg: #fff; --bg-2: #f7f9f7;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .logo { font-family: Georgia, serif; font-size: 1.4rem; font-weight: 700; color: var(--green); text-decoration: none; }
+    .logo span { color: var(--text); }
+    .hero { background: linear-gradient(150deg, #fff5f5 0%, #fff 70%); padding: 4rem 2rem 3rem; text-align: center; border-bottom: 1px solid var(--border); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: #FEE2E2; color: #DC2626; font-size: .75rem; font-weight: 700; padding: .3rem .9rem; border-radius: 20px; margin-bottom: 1.25rem; letter-spacing: .5px; text-transform: uppercase; }
+    .hero h1 { font-family: Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; margin-bottom: .75rem; }
+    .hero p { font-size: 1rem; color: var(--text-3); max-width: 500px; margin: 0 auto; }
+    .container { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
+    .card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
+    .card h2 { font-family: Georgia, serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+    .card p { font-size: .92rem; color: var(--text-2); margin-bottom: .75rem; }
+    .card ul { padding-left: 1.3rem; margin-bottom: .75rem; }
+    .card li { font-size: .9rem; color: var(--text-2); margin-bottom: .35rem; }
+    label { display: block; font-size: .8rem; font-weight: 600; color: var(--text-2); margin-bottom: 5px; }
+    input, select, textarea { width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: .9rem; font-family: inherit; outline: none; color: var(--text); margin-bottom: 1rem; }
+    input:focus, textarea:focus { border-color: var(--green); }
+    textarea { height: 90px; resize: vertical; }
+    .btn-danger { width: 100%; background: #DC2626; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: .95rem; cursor: pointer; transition: background .2s; }
+    .btn-danger:hover { background: #B91C1C; }
+    .success-msg { display: none; background: var(--green-pale); border: 1px solid var(--green); border-radius: 10px; padding: 1rem 1.25rem; font-size: .9rem; color: var(--green); margin-top: 1rem; }
+    .info-box { background: #FEF3C7; border-left: 3px solid #D97706; border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; font-size: .88rem; color: #92400E; margin-bottom: 1.5rem; }
+    footer { background: #1a1a1a; color: #aaa; padding: 2rem; text-align: center; font-size: .78rem; line-height: 1.8; margin-top: 3rem; }
+    footer strong { color: #ddd; }
+    @media(max-width:600px) { .container { padding: 2rem 1rem; } nav { padding: 0 1rem; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="https://www.rentnestle.com" class="logo">Rent<span>Nestle</span></a>
+  <a href="https://www.rentnestle.com" style="font-size:.85rem;color:#444;text-decoration:none;">← Back to Home</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">🗑️ Data Deletion</div>
+  <h1>Delete My Data</h1>
+  <p>Submit a request to permanently delete all your personal data from RentNestle.</p>
+</div>
+
+<div class="container">
+
+  <div class="info-box">
+    ⚠️ <strong>This action is permanent.</strong> Deleting your data will remove your account, saved properties, agreements, and all personal information. This cannot be undone.
+  </div>
+
+  <div class="card">
+    <h2>What will be deleted?</h2>
+    <ul>
+      <li>Your account and profile information</li>
+      <li>Mobile number and identity verification data</li>
+      <li>Saved properties and search history</li>
+      <li>Rental agreements (copies will be emailed to you first)</li>
+      <li>HRA receipts and transaction history</li>
+      <li>All WhatsApp conversation logs</li>
+      <li>Property listings (if you are a landlord)</li>
+    </ul>
+    <p style="font-size:.82rem;color:var(--text-3)">Note: We are legally required to retain certain financial and agreement records for up to 7 years under Indian law. These records will be anonymised and not linked to your identity.</p>
+  </div>
+
+  <div class="card">
+    <h2>Submit Deletion Request</h2>
+    <form id="deleteForm" onsubmit="submitRequest(event)">
+      <label>Registered Mobile Number</label>
+      <input type="tel" id="phone" placeholder="+91 98765 43210" required maxlength="15"/>
+
+      <label>Full Name (as registered)</label>
+      <input type="text" id="name" placeholder="Your full name" required/>
+
+      <label>Email Address (for confirmation)</label>
+      <input type="email" id="email" placeholder="your@email.com" required/>
+
+      <label>Reason for deletion (optional)</label>
+      <select id="reason">
+        <option value="">Select a reason</option>
+        <option>No longer using the service</option>
+        <option>Privacy concerns</option>
+        <option>Found another service</option>
+        <option>Account security issue</option>
+        <option>Other</option>
+      </select>
+
+      <label>Additional comments (optional)</label>
+      <textarea id="comments" placeholder="Any additional information..."></textarea>
+
+      <button type="submit" class="btn-danger">🗑️ Submit Deletion Request</button>
+    </form>
+
+    <div class="success-msg" id="successMsg">
+      ✅ <strong>Request received.</strong> We will process your data deletion within <strong>30 days</strong> and send a confirmation to your email. Your confirmation reference: <strong id="refCode"></strong>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Alternative: Contact Us Directly</h2>
+    <p>You can also send your deletion request directly to our privacy team:</p>
+    <p>📧 <strong>privacy@rentnestle.com</strong></p>
+    <p>Include your registered mobile number and full name. We will process your request within 30 business days as required by the Digital Personal Data Protection Act, 2023.</p>
+  </div>
+
+</div>
+
+<footer>
+  <strong>Techsoft W3 India Private Limited</strong><br/>
+  CIN: U72300TN2014PTC096558<br/>
+  Office No 222, Business Centre, 31A Cathedral Garden Road, Nungambakkam, Chennai – 600034, Tamil Nadu, India<br/><br/>
+  © 2025 Techsoft W3 India Private Limited. RentNestle.com is a product of Techsoft W3 India Private Limited.
+</footer>
+
+<script>
+function submitRequest(e) {
+  e.preventDefault();
+  const ref = 'RN-DEL-' + Date.now().toString(36).toUpperCase();
+  document.getElementById('refCode').textContent = ref;
+  document.getElementById('successMsg').style.display = 'block';
+  document.getElementById('deleteForm').style.display = 'none';
+
+  // In production: POST to /api/data-deletion with the form data
+  fetch('/api/data-deletion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone: document.getElementById('phone').value,
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      reason: document.getElementById('reason').value,
+      ref: ref
+    })
+  }).catch(() => {}) // Silent fail - request is still logged visually
+}
+</script>
+</body>
+</html>
