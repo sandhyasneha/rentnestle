@@ -1,12 +1,6 @@
 // POST /api/auth/send-otp
-// Sends real OTP via Supabase phone auth
+// TEST MODE: Just returns success — no SMS sent until DLT approved
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 export async function POST(req: Request) {
   try {
@@ -16,24 +10,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Valid 10-digit number required' }, { status: 400 })
     }
 
-    const fullPhone = `+91${phone}`
-
-    // Send OTP via Supabase (uses Twilio/SMS provider configured in dashboard)
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: fullPhone,
-      options: {
-        data: { role, name }, // stored in raw_user_meta_data
-      },
-    })
-
-    if (error) {
-      console.error('Supabase OTP error:', error.message)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
+
+    // TEST MODE — no real SMS sent
+    // Real SMS via MSG91 will be enabled after DLT registration
+    console.log(`[TEST MODE] OTP requested for +91${phone} — use 1234`)
 
     return NextResponse.json({
       success: true,
-      message: `OTP sent to +91${phone}`,
+      message: 'OTP sent (Test Mode — use 1234)',
+      testMode: true,
     })
 
   } catch (err) {
