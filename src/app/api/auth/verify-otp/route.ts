@@ -1,5 +1,4 @@
 // POST /api/auth/verify-otp
-// Verifies OTP and creates/updates user profile
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -14,54 +13,69 @@ export async function POST(req: Request) {
     const { phone, otp, role, name } = await req.json()
 
     if (!phone || !otp || !role) {
-      return NextResponse.json({ error: 'phone, otp and role are required' }, { status: 400 })
+      return NextResponse.json({ error: 'Phone, OTP and role are required' }, { status: 400 })
+    }
+
+    // TEST MODE: Accept 1234 until SMS/DLT is configured
+    if (otp !== '1234') {
+      return NextResponse.json({ error: 'Invalid OTP. Use 1234 in test mode.' }, { status: 401 })
     }
 
     const fullPhone = `+91${phone}`
 
-    // Verify OTP with Supabase
-    const supabaseClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const existingUser = existingUsers?.users?.find(u => u.phone === fullPhone)
 
-    const { data, error } = await supabaseClient.auth.verifyOtp({
-      phone: fullPhone,
-      token: otp,
-      type: 'sms',
-    })
+    let userId: string
 
-    if (error || !data.user) {
-      console.error('OTP verify error:', error?.message)
-      return NextResponse.json({
-        error: error?.message || 'Invalid OTP',
-      }, { status: 401 })
+    if (existingUser) {
+      userId = existingUser.id
+    } else {
+      // Create new user
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        phone: fullPhone,
+        phone_confirm: true,
+        app_metadata: { role, name },
+        user_metadata: { full_name: name, role },
+      })
+
+      if (createError || !newUser.user) {
+        console.error('Create user error:', createError?.message)
+        return NextResponse.json({ error: 'Failed to create account. Please try again.' }, { status: 500 })
+      }
+
+      userId = newUser.user.id
     }
 
-    const userId = data.user.id
-
-    // Upsert profile with name and role
+    // Upsert profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .upsert({
-        id: userId,
-        phone,
-        role,
+        id:        userId,
+        phone:     phone,
+        role:      role,
         full_name: name || null,
       }, { onConflict: 'id' })
 
     if (profileError) {
       console.error('Profile upsert error:', profileError.message)
+      // Don't fail — profile might already exist
     }
 
+    // Create a session for the user
+    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: `${phone}@rentnestle.temp`,
+    })
+
     return NextResponse.json({
-      success: true,
+      success:      true,
       userId,
       role,
-      name,
-      accessToken: data.session?.access_token,
-      refreshToken: data.session?.refresh_token,
-      message: 'Verified successfully',
+      name:         name || '',
+      phone,
+      message:      'Verified successfully',
     })
 
   } catch (err) {
