@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     // Check if user already exists
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const existingUser = existingUsers?.users?.find(u => u.phone === fullPhone)
+    const existingUser = existingUsers?.users?.find((u: any) => u.phone === fullPhone)
 
     let userId: string
 
