@@ -1,38 +1,43 @@
 // POST /api/auth/send-otp
-// Body: { phone: "9876543210", role: "tenant" | "owner" }
-
+// Sends real OTP via Supabase phone auth
 import { NextResponse } from 'next/server'
-import { sendOtp } from '@/lib/otp'
-import { supabaseAdmin } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export async function POST(req: Request) {
   try {
-    const { phone, role } = await req.json()
+    const { phone, role, name } = await req.json()
 
-    // Validate phone
     if (!phone || !/^\d{10}$/.test(phone)) {
-      return NextResponse.json({ error: 'Valid 10-digit phone number required' }, { status: 400 })
+      return NextResponse.json({ error: 'Valid 10-digit number required' }, { status: 400 })
     }
 
-    // Send OTP via MSG91
-    const { success, error } = await sendOtp(phone)
-    if (!success) {
-      return NextResponse.json({ error }, { status: 500 })
-    }
+    const fullPhone = `+91${phone}`
 
-    // Store role in metadata (used when creating profile after verification)
-    // We use Supabase admin to upsert a pending session marker
-    // The actual user record is created on OTP verify
+    // Send OTP via Supabase (uses Twilio/SMS provider configured in dashboard)
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: fullPhone,
+      options: {
+        data: { role, name }, // stored in raw_user_meta_data
+      },
+    })
+
+    if (error) {
+      console.error('Supabase OTP error:', error.message)
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
 
     return NextResponse.json({
       success: true,
-      message: process.env.NODE_ENV !== 'production'
-        ? 'TEST MODE: Use OTP 1234'
-        : 'OTP sent successfully',
-      testMode: process.env.NODE_ENV !== 'production'
+      message: `OTP sent to +91${phone}`,
     })
+
   } catch (err) {
     console.error('send-otp error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 })
   }
 }

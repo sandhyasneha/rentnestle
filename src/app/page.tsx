@@ -165,29 +165,57 @@ export default function HomePage() {
     }
   }
 
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
     const code = otp.join('')
     if (code.length < 4) return
-    if (code !== '1234') {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp: code, role, name }),
+      })
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        setOtpErr(true)
+        setLoading(false)
+        setTimeout(() => {
+          setOtp(['', '', '', ''])
+          setOtpErr(false)
+          otpRefs[0].current?.focus()
+        }, 700)
+        return
+      }
+
+      // Save session to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rn_user_name',  data.name || name)
+        localStorage.setItem('rn_user_phone', phone)
+        localStorage.setItem('rn_user_role',  data.role || role)
+        localStorage.setItem('rn_user_id',    data.userId || '')
+        if (data.accessToken) {
+          localStorage.setItem('rn_access_token',  data.accessToken)
+          localStorage.setItem('rn_refresh_token', data.refreshToken || '')
+        }
+      }
+
+      setLoading(false)
+      setStep('success')
+      setTimeout(() => {
+        setModalOpen(false)
+        router.push(role === 'owner' ? '/dashboard/owner' : '/search')
+      }, 1500)
+
+    } catch {
+      setLoading(false)
       setOtpErr(true)
       setTimeout(() => {
         setOtp(['', '', '', ''])
         setOtpErr(false)
         otpRefs[0].current?.focus()
       }, 700)
-      return
     }
-    // Save to localStorage for dashboard welcome message
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('rn_user_name', name)
-      localStorage.setItem('rn_user_phone', phone)
-      localStorage.setItem('rn_user_role', role)
-    }
-    setStep('success')
-    setTimeout(() => {
-      setModalOpen(false)
-      router.push(role === 'owner' ? '/dashboard/owner' : '/search')
-    }, 1500)
   }
 
   const stepDots: ModalStep[] = ['phone', 'otp', 'success']
@@ -630,9 +658,9 @@ export default function HomePage() {
 
                 <button
                   onClick={verifyOtp}
-                  disabled={otp.join('').length < 4}
+                  disabled={otp.join('').length < 4 || loading}
                   style={{ width: '100%', background: otp.join('').length === 4 ? '#0F6E56' : '#e0e4e0', color: '#fff', border: 'none', padding: '12px', borderRadius: 12, fontWeight: 700, fontSize: '.95rem', cursor: otp.join('').length === 4 ? 'pointer' : 'not-allowed' }}>
-                  Verify & Continue →
+                  {loading ? 'Verifying...' : 'Verify & Continue →'}
                 </button>
 
                 <div style={{ textAlign: 'center', marginTop: 10 }}>
