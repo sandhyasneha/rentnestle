@@ -1,82 +1,125 @@
-// POST /api/auth/verify-otp
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { SignJWT } from 'jose'
 
-export async function POST(req: Request) {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function POST(req: NextRequest) {
   try {
     const { phone, otp, role, name } = await req.json()
 
-    if (!phone || !otp || !role) {
-      return NextResponse.json({ error: 'Phone, OTP and role are required' }, { status: 400 })
+    if (!phone || !otp) {
+      return NextResponse.json({ error: 'Phone and OTP are required' }, { status: 400 })
     }
 
-    // TEST MODE: Accept 1234
-    if (otp !== '1234') {
-      return NextResponse.json({ 
-        error: 'Invalid OTP. Use 1234 in test mode.' 
-      }, { status: 401 })
+    // ── Find valid OTP in Supabase ──────────────────────
+    const { data, error } = await supabase
+      .from('otp_verifications')
+      .select('*')
+      .eq('phone', phone)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data) {
+      return NextResponse.json({ error: 'OTP expired or not found. Please request a new one.' }, { status: 400 })
     }
 
-    // Try to create/find user in Supabase using admin client
-    try {
-      const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-      )
+    // ── Check attempt limit ─────────────────────────────
+    if (data.attempts >= 3) {
+      await supabase.from('otp_verifications').delete().eq('phone', phone)
+      return NextResponse.json({ error: 'Too many attempts. Please request a new OTP.' }, { status: 429 })
+    }
 
-      const fullPhone = `+91${phone}`
+    // ── Verify OTP ──────────────────────────────────────
+    if (otp !== data.otp) {
+      await supabase
+        .from('otp_verifications')
+        .update({ attempts: (data.attempts || 0) + 1 })
+        .eq('id', data.id)
+      return NextResponse.json({ error: 'Invalid OTP. Please check your WhatsApp.' }, { status: 401 })
+    }
 
-      // Try to create user
-      const { data: userData, error: createError } = await supabaseAdmin
-        .auth.admin.createUser({
-          phone: fullPhone,
-          phone_confirm: true,
-          app_metadata: { role },
-          user_metadata: { full_name: name, role },
-        })
+    // ── Mark OTP as used ────────────────────────────────
+    await supabase.from('otp_verifications').update({ used: true }).eq('id', data.id)
 
-      let userId = userData?.user?.id
+    // ── Create or find user in profiles ────────────────
+    let userId: string
 
-      // If user already exists, find them
-      if (createError && createError.message.includes('already')) {
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers()
-        const existing = listData?.users?.find((u: any) => u.phone === fullPhone)
-        userId = existing?.id
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('phone', phone)
+      .single()
+
+    if (existingProfile?.id) {
+      userId = existingProfile.id
+      // Update name if provided
+      if (name) {
+        await supabase.from('profiles').update({ full_name: name }).eq('id', userId)
+      }
+    } else {
+      // Create new auth user
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        phone: `+91${phone}`,
+        phone_confirm: true,
+        app_metadata:  { role: role || data.role },
+        user_metadata: { full_name: name || data.name, role: role || data.role },
+      })
+
+      if (authError || !authUser.user) {
+        console.error('Create user error:', authError?.message)
+        return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
       }
 
-      if (userId) {
-        // Upsert profile
-        await supabaseAdmin.from('profiles').upsert({
-          id: userId,
-          phone,
-          role,
-          full_name: name || null,
-        }, { onConflict: 'id' })
+      userId = authUser.user.id
 
-        return NextResponse.json({
-          success: true,
-          userId,
-          role,
-          name: name || '',
-          phone,
-          message: 'Verified successfully',
-        })
-      }
-    } catch (dbErr) {
-      console.error('Supabase error (non-fatal):', dbErr)
-      // Even if Supabase fails, allow login in test mode
+      // Profile created automatically via trigger
+      // Update with name and role
+      await supabase.from('profiles').upsert({
+        id:        userId,
+        phone,
+        role:      role || data.role || 'tenant',
+        full_name: name || data.name || null,
+      }, { onConflict: 'id' })
     }
 
-    // Fallback — return success even without DB (pure test mode)
-    return NextResponse.json({
-      success:  true,
-      userId:   `test-${phone}`,
-      role,
-      name:     name || '',
+    // ── Issue JWT ───────────────────────────────────────
+    const token = await new SignJWT({
       phone,
-      message:  'Verified (test mode - no DB)',
+      userId,
+      role: role || data.role || 'tenant',
+      name: name || data.name || '',
     })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('7d')
+      .setIssuedAt()
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET!))
+
+    // ── Set HTTP-only cookie ────────────────────────────
+    const res = NextResponse.json({
+      success: true,
+      userId,
+      role:    role || data.role || 'tenant',
+      name:    name || data.name || '',
+      phone,
+      message: 'Verified successfully',
+    })
+
+    res.cookies.set('rentnestle_token', token, {
+      httpOnly: true,
+      secure:   true,
+      sameSite: 'lax',
+      maxAge:   604800, // 7 days
+      path:     '/',
+    })
+
+    return res
 
   } catch (err) {
     console.error('verify-otp error:', err)

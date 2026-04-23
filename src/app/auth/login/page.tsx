@@ -23,6 +23,9 @@ export default function LoginPage() {
     useRef<HTMLInputElement>(null),
   ]
 
+  const [testOtp,   setTestOtp]   = useState('')
+  const [isTestMode,setIsTestMode]= useState(false)
+
   const handleSendOtp = async () => {
     if (phone.length !== 10 || !name.trim()) return
     setError('')
@@ -35,6 +38,14 @@ export default function LoginPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); setLoading(false); return }
+      // Capture test OTP if in test mode
+      if (data.testMode && data.debugOtp) {
+        setTestOtp(data.debugOtp)
+        setIsTestMode(true)
+      } else {
+        setIsTestMode(false)
+        setTestOtp('')
+      }
       setStep('otp')
       setTimeout(() => otpRefs[0].current?.focus(), 150)
     } catch {
@@ -197,8 +208,12 @@ export default function LoginPage() {
             <button onClick={handleSendOtp} style={{ background: 'none', border: 'none', color: '#0F6E56', fontSize: '.78rem', fontWeight: 600, cursor: 'pointer' }}>Resend OTP</button>
           </div>
 
-          <div style={{ fontSize: '.72rem', color: '#888', textAlign: 'center', marginTop: '.75rem', background: '#FAEEDA', borderRadius: 8, padding: '8px 12px' }}>
-            ⚠️ <strong style={{ color: '#BA7517' }}>Test OTP:</strong> Enter <strong style={{ color: '#BA7517' }}>1 2 3 4</strong>
+          <div style={{ fontSize: '.72rem', color: '#888', textAlign: 'center', marginTop: '.75rem', background: isTestMode ? '#FAEEDA' : '#E1F5EE', borderRadius: 8, padding: '8px 12px' }}>
+            {isTestMode ? (
+              <>⚠️ <strong style={{ color: '#BA7517' }}>Test Mode OTP:</strong> <strong style={{ color: '#BA7517', fontSize: '1.1rem', letterSpacing: 4 }}>{testOtp}</strong></>
+            ) : (
+              <>📱 OTP sent to your <strong style={{ color: '#0F6E56' }}>WhatsApp</strong> +91 {phone}</>
+            )}
           </div>
         </>}
 
