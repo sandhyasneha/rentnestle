@@ -1,33 +1,29 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
-
-# Next.js
-.next/
-out/
-build/
-
-# Env — NEVER commit
-.env
-.env.local
-.env.*.local
-
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-
-# Supabase local
-supabase/.branches
-supabase/.temp
+echo # Dependencies > .gitignore
+echo node_modules/ >> .gitignore
+echo .pnp >> .gitignore
+echo .pnp.js >> .gitignore
+echo. >> .gitignore
+echo # Environment variables - NEVER commit >> .gitignore
+echo .env >> .gitignore
+echo .env.local >> .gitignore
+echo .env.*.local >> .gitignore
+echo .env.production >> .gitignore
+echo. >> .gitignore
+echo # Next.js >> .gitignore
+echo .next/ >> .gitignore
+echo out/ >> .gitignore
+echo build/ >> .gitignore
+echo. >> .gitignore
+echo # Vercel >> .gitignore
+echo .vercel >> .gitignore
+echo. >> .gitignore
+echo # TypeScript >> .gitignore
+echo *.tsbuildinfo >> .gitignore
+echo next-env.d.ts >> .gitignore
+echo. >> .gitignore
+echo # OS >> .gitignore
+echo .DS_Store >> .gitignore
+echo Thumbs.db >> .gitignore
+echo. >> .gitignore
+echo # Logs >> .gitignore
+echo *.log >> .gitignore
