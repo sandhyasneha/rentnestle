@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
           type: 'template',
           template: {
             name:     'rcusers',
-            language: { code: 'en' },
+            language: { code: 'en_US' },
             components: [
               {
                 type: 'body',
