@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
       {
         method:  'POST',
         headers: {
-          'Content-Type':  'application/json',
           'Authorization': `Bearer ${WA_TOKEN}`,
+          'Content-Type':  'application/json',
         },
         body: JSON.stringify({
           messaging_product: 'whatsapp',
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
           type: 'template',
           template: {
             name:     'rcusers',
-            language: { code: 'en_US' },
+            language: { code: 'en' },
             components: [
               {
                 type: 'body',
