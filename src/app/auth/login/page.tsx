@@ -81,12 +81,14 @@ export default function LoginPage() {
       const data = await res.json()
       if (!res.ok || !data.success) {
         setOtpErr(true)
+        setError(data.error || 'Invalid OTP')
         setLoading(false)
         setTimeout(() => {
           setOtp(['','','',''])
           setOtpErr(false)
+          setError('')
           otpRefs[0].current?.focus()
-        }, 700)
+        }, 1500)
         return
       }
       // Save to localStorage
@@ -196,7 +198,7 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {(error || otpErr) && <p style={{ textAlign: 'center', color: '#e24b4a', fontSize: '.82rem', marginBottom: '.5rem' }}>❌ Wrong OTP. Use 1234 in test mode.</p>}
+          {(error || otpErr) && <p style={{ textAlign: 'center', color: '#e24b4a', fontSize: '.82rem', marginBottom: '.5rem' }}>❌ Wrong OTP. Please check your WhatsApp.</p>}
 
           <button onClick={handleVerify}
             disabled={otp.join('').length < 4 || loading}
