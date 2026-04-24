@@ -7,6 +7,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// Namespace UUID for RentNestle (fixed)
+const RN_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
+
 export async function POST(req: NextRequest) {
   try {
     const { phone, otp, role, name } = await req.json()
@@ -15,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Phone and OTP are required' }, { status: 400 })
     }
 
-    // ── Find valid OTP in Supabase ──────────────────────
+    // ── Find valid OTP ──────────────────────────────────
     const { data, error } = await supabase
       .from('otp_verifications')
       .select('*')
@@ -27,13 +30,17 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error || !data) {
-      return NextResponse.json({ error: 'OTP expired or not found. Please request a new one.' }, { status: 400 })
+      return NextResponse.json({
+        error: 'OTP expired or not found. Please request a new one.'
+      }, { status: 400 })
     }
 
-    // ── Check attempt limit ─────────────────────────────
+    // ── Check attempts ──────────────────────────────────
     if (data.attempts >= 3) {
       await supabase.from('otp_verifications').delete().eq('phone', phone)
-      return NextResponse.json({ error: 'Too many attempts. Please request a new OTP.' }, { status: 429 })
+      return NextResponse.json({
+        error: 'Too many attempts. Please request a new OTP.'
+      }, { status: 429 })
     }
 
     // ── Verify OTP ──────────────────────────────────────
@@ -42,71 +49,55 @@ export async function POST(req: NextRequest) {
         .from('otp_verifications')
         .update({ attempts: (data.attempts || 0) + 1 })
         .eq('id', data.id)
-      return NextResponse.json({ error: 'Invalid OTP. Please check your WhatsApp.' }, { status: 401 })
+      return NextResponse.json({
+        error: 'Invalid OTP. Please check your WhatsApp.'
+      }, { status: 401 })
     }
 
-    // ── Mark OTP as used ────────────────────────────────
+    // ── Mark OTP used ───────────────────────────────────
     await supabase.from('otp_verifications').update({ used: true }).eq('id', data.id)
 
-    // ── Create or find user in profiles ────────────────
-    let userId: string
-
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('phone', phone)
-      .single()
-
-    if (existingProfile?.id) {
-      userId = existingProfile.id
-      // Update name if provided
-      if (name) {
-        await supabase.from('profiles').update({ full_name: name }).eq('id', userId)
-      }
-    } else {
-      // Create new auth user
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        phone: `+91${phone}`,
-        phone_confirm: true,
-        app_metadata:  { role: role || data.role },
-        user_metadata: { full_name: name || data.name, role: role || data.role },
+    // ── Generate consistent UUID from phone ─────────────
+    const { data: uuidData } = await supabase
+      .rpc('uuid_generate_v5', {
+        namespace: RN_NAMESPACE,
+        name: phone
       })
+    
+    // Fallback if RPC fails
+    const userId = uuidData || data.id
 
-      if (authError || !authUser.user) {
-        console.error('Create user error:', authError?.message)
-        return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
-      }
+    const userRole = role || data.role || 'tenant'
+    const userName = name || data.name || ''
 
-      userId = authUser.user.id
-
-      // Profile created automatically via trigger
-      // Update with name and role
-      await supabase.from('profiles').upsert({
+    // ── Upsert profile ──────────────────────────────────
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
         id:        userId,
         phone,
-        role:      role || data.role || 'tenant',
-        full_name: name || data.name || null,
+        role:      userRole,
+        full_name: userName,
       }, { onConflict: 'id' })
+
+    if (profileError) {
+      console.log('Profile upsert error:', profileError.message)
     }
 
     // ── Issue JWT ───────────────────────────────────────
     const token = await new SignJWT({
-      phone,
-      userId,
-      role: role || data.role || 'tenant',
-      name: name || data.name || '',
+      phone, userId, role: userRole, name: userName,
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
       .setIssuedAt()
       .sign(new TextEncoder().encode(process.env.JWT_SECRET!))
 
-    // ── Set HTTP-only cookie ────────────────────────────
     const res = NextResponse.json({
       success: true,
       userId,
-      role:    role || data.role || 'tenant',
-      name:    name || data.name || '',
+      role:    userRole,
+      name:    userName,
       phone,
       message: 'Verified successfully',
     })
@@ -115,7 +106,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure:   true,
       sameSite: 'lax',
-      maxAge:   604800, // 7 days
+      maxAge:   604800,
       path:     '/',
     })
 
