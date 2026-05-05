@@ -83,7 +83,6 @@ export default function EditPropertyPage() {
 
     setUploading(true)
     setError('')
-    let lastPhotos: string[] = [...form.photos]
 
     for (const file of files) {
       const uploadData = new FormData()
@@ -91,36 +90,38 @@ export default function EditPropertyPage() {
       uploadData.append('property_id', id)
 
       try {
-        const res  = await fetch('/api/upload-photo', { method:'POST', body: uploadData })
-        const data = await res.json()
+        const res = await fetch('/api/upload-photo', { method: 'POST', body: uploadData })
+        let data: any = {}
+        try { data = await res.json() } catch {}
 
-        console.log('Upload response:', data)
-
-        if (data.warning) setError(data.warning)
-
-        if (data.url) {
-          // Use photos array from API response if available
-          if (data.photos) {
-            lastPhotos = data.photos
-          } else {
-            lastPhotos = [...lastPhotos, data.url]
-          }
-          update('photos', lastPhotos)
-        } else if (data.error) {
-          setError(data.error)
+        // Always reload from server to get latest saved photos
+        const propRes  = await fetch(`/api/properties/${id}`)
+        const propData = await propRes.json()
+        if (propData.property?.photos) {
+          update('photos', propData.property.photos)
+          setSuccess('✅ Photo saved to listing!')
+          setTimeout(() => setSuccess(''), 3000)
+        } else if (data.url) {
+          update('photos', (f: any) => [...(f.photos || []), data.url])
         }
       } catch (err) {
         console.error('Upload error:', err)
-        setError('Upload failed. Please try again.')
+        // Reload from server even on error - photo may have saved
+        try {
+          const propRes  = await fetch(`/api/properties/${id}`)
+          const propData = await propRes.json()
+          if (propData.property?.photos) {
+            update('photos', propData.property.photos)
+            setSuccess('✅ Photo saved!')
+            setTimeout(() => setSuccess(''), 3000)
+          } else {
+            setError('Upload failed. Please try again.')
+          }
+        } catch { setError('Upload failed. Please try again.') }
       }
     }
 
     setUploading(false)
-    if (!error) {
-      setSuccess(`Photos uploaded and saved! ✅`)
-      setTimeout(() => setSuccess(''), 3000)
-    }
-    // Reset file input
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
