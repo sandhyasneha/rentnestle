@@ -4,7 +4,11 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 declare global {
-  interface Window { google: any; initStreetView: () => void }
+  interface Window {
+    google: any
+    initStreetView: () => void
+    initStreetViewCheck: () => void
+  }
 }
 
 export default function PropertyDetailPage() {
