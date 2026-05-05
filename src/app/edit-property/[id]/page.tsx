@@ -2,12 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 const AMENITIES = [
   {key:'parking',label:'🚗 Parking'},{key:'power_backup',label:'⚡ Power Backup'},
@@ -19,17 +13,17 @@ const AMENITIES = [
 const STATES = ['Tamil Nadu','Karnataka','Maharashtra','Delhi','Telangana','Kerala','Gujarat','Rajasthan','Uttar Pradesh','West Bengal','Andhra Pradesh','Punjab','Haryana','Odisha','Bihar']
 
 export default function EditPropertyPage() {
-  const router  = useRouter()
-  const params  = useParams()
-  const id      = params.id as string
+  const router = useRouter()
+  const params = useParams()
+  const id     = params.id as string
 
-  const [loading,      setLoading]      = useState(true)
-  const [saving,       setSaving]       = useState(false)
-  const [uploading,    setUploading]    = useState(false)
-  const [genAI,        setGenAI]        = useState(false)
-  const [error,        setError]        = useState('')
-  const [success,      setSuccess]      = useState('')
-  const [activeTab,    setActiveTab]    = useState<'details'|'photos'|'amenities'>('details')
+  const [loading,   setLoading]   = useState(true)
+  const [saving,    setSaving]    = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [genAI,     setGenAI]     = useState(false)
+  const [error,     setError]     = useState('')
+  const [success,   setSuccess]   = useState('')
+  const [activeTab, setActiveTab] = useState<'details'|'photos'|'amenities'>('details')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState<any>({
@@ -46,19 +40,24 @@ export default function EditPropertyPage() {
     const userId = localStorage.getItem('rn_user_id')
     if (!userId) { router.replace('/auth/login'); return }
 
-    const { data } = await supabase.from('properties').select('*').eq('id', id).single()
-    if (!data) { router.replace('/dashboard/owner'); return }
-    if (data.owner_id !== userId) { alert('You can only edit your own listings.'); router.replace('/dashboard/owner'); return }
-
+    const res  = await fetch(`/api/properties/${id}`)
+    const data = await res.json()
+    if (!data.property) { router.replace('/dashboard/owner'); return }
+    if (data.property.owner_id !== userId) {
+      alert('You can only edit your own listings.')
+      router.replace('/dashboard/owner')
+      return
+    }
+    const p = data.property
     setForm({
-      ...data,
-      monthly_rent:     data.monthly_rent?.toString() || '',
-      security_deposit: data.security_deposit?.toString() || '',
-      area_sqft:        data.area_sqft?.toString() || '',
-      floor_number:     data.floor_number?.toString() || '',
-      total_floors:     data.total_floors?.toString() || '',
-      amenities:        data.amenities || {},
-      photos:           data.photos || [],
+      ...p,
+      monthly_rent:     p.monthly_rent?.toString() || '',
+      security_deposit: p.security_deposit?.toString() || '',
+      area_sqft:        p.area_sqft?.toString() || '',
+      floor_number:     p.floor_number?.toString() || '',
+      total_floors:     p.total_floors?.toString() || '',
+      amenities:        p.amenities || {},
+      photos:           p.photos || [],
     })
     setLoading(false)
   }
@@ -76,6 +75,7 @@ export default function EditPropertyPage() {
     setGenAI(false)
   }
 
+  // Upload photos to Supabase Storage via API
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
@@ -83,62 +83,71 @@ export default function EditPropertyPage() {
 
     setUploading(true)
     setError('')
-    const newUrls: string[] = []
+    let lastPhotos: string[] = [...form.photos]
 
     for (const file of files) {
-      const ext      = file.name.split('.').pop()
-      const fileName = `${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { data, error } = await supabase.storage
-        .from('property-images')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false })
+      const uploadData = new FormData()
+      uploadData.append('file', file)
+      uploadData.append('property_id', id)
 
-      if (error) { console.error('Upload error:', error.message); continue }
+      try {
+        const res  = await fetch('/api/upload-photo', { method:'POST', body: uploadData })
+        const data = await res.json()
 
-      const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(fileName)
-      newUrls.push(publicUrl)
+        console.log('Upload response:', data)
+
+        if (data.warning) setError(data.warning)
+
+        if (data.url) {
+          // Use photos array from API response if available
+          if (data.photos) {
+            lastPhotos = data.photos
+          } else {
+            lastPhotos = [...lastPhotos, data.url]
+          }
+          update('photos', lastPhotos)
+        } else if (data.error) {
+          setError(data.error)
+        }
+      } catch (err) {
+        console.error('Upload error:', err)
+        setError('Upload failed. Please try again.')
+      }
     }
 
-    update('photos', [...form.photos, ...newUrls])
     setUploading(false)
-    setSuccess(`${newUrls.length} photo(s) uploaded successfully!`)
-    setTimeout(() => setSuccess(''), 3000)
+    if (!error) {
+      setSuccess(`Photos uploaded and saved! ✅`)
+      setTimeout(() => setSuccess(''), 3000)
+    }
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const removePhoto = (idx: number) => {
-    update('photos', form.photos.filter((_: string, i: number) => i !== idx))
+  const removePhoto = async (idx: number) => {
+    const updatedPhotos = form.photos.filter((_: string, i: number) => i !== idx)
+    update('photos', updatedPhotos)
+
+    // Save immediately
+    await fetch(`/api/edit-property/${id}`, {
+      method:  'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({ photos: updatedPhotos }),
+    })
   }
 
   const handleSave = async (publish = false) => {
     setSaving(true); setError('')
     try {
-      const { error } = await supabase.from('properties').update({
-        title:            form.title,
-        property_type:    form.property_type,
-        monthly_rent:     parseInt(form.monthly_rent),
-        security_deposit: parseInt(form.security_deposit || '0'),
-        address_line1:    form.address_line1,
-        address_line2:    form.address_line2 || null,
-        city:             form.city,
-        state:            form.state,
-        pincode:          form.pincode,
-        bedrooms:         parseInt(form.bedrooms),
-        bathrooms:        parseInt(form.bathrooms),
-        area_sqft:        form.area_sqft ? parseInt(form.area_sqft) : null,
-        floor_number:     form.floor_number ? parseInt(form.floor_number) : null,
-        total_floors:     form.total_floors ? parseInt(form.total_floors) : null,
-        furnishing:       form.furnishing,
-        tenant_pref:      form.tenant_pref,
-        food_pref:        form.food_pref,
-        amenities:        form.amenities,
-        description:      form.description,
-        photos:           form.photos,
-        status:           publish ? 'active' : form.status,
-      }).eq('id', id)
-
-      if (error) { setError('Save failed: ' + error.message); setSaving(false); return }
-
+      const res = await fetch(`/api/edit-property/${id}`, {
+        method:  'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body:    JSON.stringify({...form, status: publish ? 'active' : form.status}),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Save failed'); setSaving(false); return }
       setSuccess(publish ? '🚀 Property published!' : '✅ Changes saved!')
-      setTimeout(() => { router.push(`/property/${id}`) }, 1200)
+      setTimeout(() => router.push(`/property/${id}`), 1200)
     } catch { setError('Network error. Please try again.') }
     setSaving(false)
   }
@@ -169,12 +178,12 @@ export default function EditPropertyPage() {
           </button>
         </div>
 
-        {/* Status badge */}
-        <div style={{display:'flex',gap:8,marginBottom:'1.5rem',alignItems:'center'}}>
-          <span style={{fontSize:'.78rem',color:'#555'}}>Status:</span>
+        {/* Status */}
+        <div style={{display:'flex',gap:8,marginBottom:'1.5rem',alignItems:'center',flexWrap:'wrap'}}>
+          <span style={{fontSize:'.78rem',color:'#555',fontWeight:600}}>Status:</span>
           {['draft','active','rented','inactive'].map(s=>(
             <button key={s} onClick={()=>update('status',s)}
-              style={{padding:'4px 12px',borderRadius:20,border:`1.5px solid ${form.status===s?'#0F6E56':'#e0e4e0'}`,background:form.status===s?'#0F6E56':'#fff',color:form.status===s?'#fff':'#555',fontSize:'.75rem',fontWeight:600,cursor:'pointer',textTransform:'capitalize' as const}}>
+              style={{padding:'5px 14px',borderRadius:20,border:`1.5px solid ${form.status===s?'#0F6E56':'#e0e4e0'}`,background:form.status===s?'#0F6E56':'#fff',color:form.status===s?'#fff':'#555',fontSize:'.75rem',fontWeight:600,cursor:'pointer',textTransform:'capitalize' as const}}>
               {s}
             </button>
           ))}
@@ -184,7 +193,7 @@ export default function EditPropertyPage() {
         <div style={{display:'flex',gap:4,background:'#f0f0f0',borderRadius:10,padding:4,marginBottom:'1.5rem'}}>
           {(['details','photos','amenities'] as const).map(tab=>(
             <button key={tab} onClick={()=>setActiveTab(tab)}
-              style={{flex:1,padding:'9px',borderRadius:8,border:'none',background:activeTab===tab?'#fff':'transparent',color:activeTab===tab?'#0F6E56':'#555',fontWeight:activeTab===tab?600:500,fontSize:'.85rem',cursor:'pointer',boxShadow:activeTab===tab?'0 1px 6px rgba(0,0,0,.08)':'none',textTransform:'capitalize' as const}}>
+              style={{flex:1,padding:'9px',borderRadius:8,border:'none',background:activeTab===tab?'#fff':'transparent',color:activeTab===tab?'#0F6E56':'#555',fontWeight:activeTab===tab?600:500,fontSize:'.85rem',cursor:'pointer',boxShadow:activeTab===tab?'0 1px 6px rgba(0,0,0,.08)':'none'}}>
               {tab==='photos'?'📸 Photos':tab==='amenities'?'🏠 Amenities':'📝 Details'}
             </button>
           ))}
@@ -194,10 +203,7 @@ export default function EditPropertyPage() {
 
           {/* DETAILS TAB */}
           {activeTab==='details' && <>
-            <div style={{marginBottom:'1rem'}}>
-              <label style={lbl}>Listing Title</label>
-              <input style={inp} value={form.title} onChange={e=>update('title',e.target.value)}/>
-            </div>
+            <div style={{marginBottom:'1rem'}}><label style={lbl}>Listing Title</label><input style={inp} value={form.title} onChange={e=>update('title',e.target.value)}/></div>
             <div style={row}>
               <div><label style={lbl}>Monthly Rent (₹)</label><input style={inp} type="number" value={form.monthly_rent} onChange={e=>update('monthly_rent',e.target.value)}/></div>
               <div><label style={lbl}>Security Deposit (₹)</label><input style={inp} type="number" value={form.security_deposit} onChange={e=>update('security_deposit',e.target.value)}/></div>
@@ -216,12 +222,12 @@ export default function EditPropertyPage() {
                 </select>
               </div>
             </div>
-            <div style={{marginBottom:'1rem'}}><label style={lbl}>Street Address</label><input style={inp} value={form.address_line1} onChange={e=>update('address_line1',e.target.value)}/></div>
+            <div style={{marginBottom:'1rem'}}><label style={lbl}>Street Address</label><input style={inp} value={form.address_line1||''} onChange={e=>update('address_line1',e.target.value)}/></div>
             <div style={{marginBottom:'1rem'}}><label style={lbl}>Landmark / Area</label><input style={inp} value={form.address_line2||''} onChange={e=>update('address_line2',e.target.value)}/></div>
             <div style={row}>
-              <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e=>update('city',e.target.value)}/></div>
+              <div><label style={lbl}>City</label><input style={inp} value={form.city||''} onChange={e=>update('city',e.target.value)}/></div>
               <div><label style={lbl}>State</label>
-                <select style={inp} value={form.state} onChange={e=>update('state',e.target.value)}>
+                <select style={inp} value={form.state||''} onChange={e=>update('state',e.target.value)}>
                   <option value="">Select state</option>
                   {STATES.map(s=><option key={s} value={s}>{s}</option>)}
                 </select>
@@ -256,58 +262,54 @@ export default function EditPropertyPage() {
 
           {/* PHOTOS TAB */}
           {activeTab==='photos' && <>
-            <div style={{marginBottom:'1.25rem'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.75rem'}}>
-                <h3 style={{fontFamily:'Georgia,serif',fontSize:'1rem',fontWeight:700}}>Property Photos</h3>
-                <span style={{fontSize:'.75rem',color:'#888'}}>{form.photos.length}/10 photos</span>
-              </div>
-
-              {/* Upload area */}
-              <div
-                onClick={()=>fileInputRef.current?.click()}
-                style={{border:'2px dashed #9FE1CB',borderRadius:12,padding:'2rem',textAlign:'center',cursor:'pointer',background:'#f0faf6',marginBottom:'1.25rem',transition:'background .2s'}}
-                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background='#E1F5EE'}
-                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='#f0faf6'}>
-                <div style={{fontSize:'2rem',marginBottom:8}}>📸</div>
-                <div style={{fontWeight:600,fontSize:'.9rem',color:'#0F6E56',marginBottom:4}}>
-                  {uploading ? 'Uploading...' : 'Click to Upload Photos'}
-                </div>
-                <div style={{fontSize:'.75rem',color:'#888'}}>JPG, PNG up to 5MB each · Max 10 photos</div>
-                <input ref={fileInputRef} type="file" accept="image/*" multiple style={{display:'none'}} onChange={handlePhotoUpload}/>
-              </div>
-
-              {/* Photo grid */}
-              {form.photos.length > 0 && (
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:'1rem'}}>
-                  {form.photos.map((url: string, idx: number) => (
-                    <div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid #e0e4e0'}}>
-                      <img src={url} alt={`Photo ${idx+1}`} style={{width:'100%',height:120,objectFit:'cover',display:'block'}}/>
-                      {idx===0 && <div style={{position:'absolute',top:5,left:5,background:'#0F6E56',color:'#fff',fontSize:'.6rem',fontWeight:700,padding:'2px 6px',borderRadius:4}}>Cover</div>}
-                      <button onClick={()=>removePhoto(idx)}
-                        style={{position:'absolute',top:5,right:5,background:'rgba(0,0,0,.6)',color:'#fff',border:'none',width:22,height:22,borderRadius:'50%',cursor:'pointer',fontSize:'.75rem',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {form.photos.length===0 && (
-                <div style={{textAlign:'center',color:'#aaa',fontSize:'.85rem',padding:'1rem'}}>No photos yet — upload some to attract more tenants!</div>
-              )}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.75rem'}}>
+              <h3 style={{fontFamily:'Georgia,serif',fontSize:'1rem',fontWeight:700}}>Property Photos</h3>
+              <span style={{fontSize:'.75rem',color:'#888'}}>{form.photos.length}/10 photos</span>
             </div>
+
+            {/* Upload area */}
+            <div onClick={()=>fileInputRef.current?.click()}
+              style={{border:'2px dashed #9FE1CB',borderRadius:12,padding:'2rem',textAlign:'center',cursor:'pointer',background:'#f0faf6',marginBottom:'1.25rem'}}
+              onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background='#E1F5EE'}
+              onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='#f0faf6'}>
+              <div style={{fontSize:'2rem',marginBottom:8}}>📸</div>
+              <div style={{fontWeight:600,fontSize:'.9rem',color:'#0F6E56',marginBottom:4}}>
+                {uploading ? '⏳ Uploading & Saving...' : 'Click to Upload Photos'}
+              </div>
+              <div style={{fontSize:'.75rem',color:'#888'}}>JPG, PNG up to 5MB · Max 10 photos · Auto-saved to listing</div>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple style={{display:'none'}} onChange={handlePhotoUpload}/>
+            </div>
+
+            {/* Photo grid */}
+            {form.photos.length > 0 ? (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:'1rem'}}>
+                {form.photos.map((url: string, idx: number) => (
+                  <div key={idx} style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid #e0e4e0'}}>
+                    <img src={url} alt={`Photo ${idx+1}`} style={{width:'100%',height:130,objectFit:'cover',display:'block'}}/>
+                    {idx===0 && <div style={{position:'absolute',top:6,left:6,background:'#0F6E56',color:'#fff',fontSize:'.6rem',fontWeight:700,padding:'2px 7px',borderRadius:4}}>Cover</div>}
+                    <button onClick={()=>removePhoto(idx)}
+                      style={{position:'absolute',top:6,right:6,background:'rgba(0,0,0,.65)',color:'#fff',border:'none',width:24,height:24,borderRadius:'50%',cursor:'pointer',fontSize:'.8rem',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{textAlign:'center',color:'#aaa',fontSize:'.85rem',padding:'2rem',background:'#f7f9f7',borderRadius:12}}>
+                No photos yet — upload some to attract more tenants! 📸
+              </div>
+            )}
           </>}
 
           {/* AMENITIES TAB */}
           {activeTab==='amenities' && <>
-            <h3 style={{fontFamily:'Georgia,serif',fontSize:'1rem',fontWeight:700,marginBottom:'.75rem'}}>Property Amenities</h3>
-            <p style={{fontSize:'.82rem',color:'#555',marginBottom:'1.25rem'}}>Select all amenities available at this property:</p>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:10}}>
+            <h3 style={{fontFamily:'Georgia,serif',fontSize:'1rem',fontWeight:700,marginBottom:'.5rem'}}>Property Amenities</h3>
+            <p style={{fontSize:'.82rem',color:'#555',marginBottom:'1.25rem'}}>Toggle available amenities — changes saved when you click Save:</p>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))',gap:10}}>
               {AMENITIES.map(a=>(
                 <button key={a.key} onClick={()=>toggleAmenity(a.key)}
-                  style={{...chip(!!form.amenities[a.key]),padding:'12px',textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                  {a.label}
-                  {form.amenities[a.key]&&<span style={{fontSize:'.7rem'}}>✓</span>}
+                  style={{...chip(!!form.amenities[a.key]),padding:'12px',textAlign:'center' as const,justifyContent:'center',display:'flex',alignItems:'center',gap:6}}>
+                  {a.label}{form.amenities[a.key]&&<span>✓</span>}
                 </button>
               ))}
             </div>
@@ -315,7 +317,7 @@ export default function EditPropertyPage() {
         </div>
 
         {/* Messages */}
-        {error && <div style={{background:'#fff5f5',border:'1px solid #fecaca',color:'#e24b4a',borderRadius:10,padding:'10px 14px',fontSize:'.85rem',marginTop:'1rem'}}>{error}</div>}
+        {error   && <div style={{background:'#fff5f5',border:'1px solid #fecaca',color:'#e24b4a',borderRadius:10,padding:'10px 14px',fontSize:'.85rem',marginTop:'1rem'}}>{error}</div>}
         {success && <div style={{background:'#E1F5EE',border:'1px solid #9FE1CB',color:'#0F6E56',borderRadius:10,padding:'10px 14px',fontSize:'.85rem',marginTop:'1rem',fontWeight:600}}>{success}</div>}
 
         {/* Save buttons */}
@@ -324,14 +326,14 @@ export default function EditPropertyPage() {
             style={{background:'#fff',border:'1.5px solid #0F6E56',color:'#0F6E56',padding:'13px',borderRadius:10,fontWeight:700,fontSize:'.9rem',cursor:saving?'not-allowed':'pointer'}}>
             {saving?'Saving...':'💾 Save Changes'}
           </button>
-          {form.status!=='active' && (
+          {form.status!=='active' ? (
             <button onClick={()=>handleSave(true)} disabled={saving}
               style={{background:saving?'#e0e4e0':'#0F6E56',color:'#fff',border:'none',padding:'13px',borderRadius:10,fontWeight:700,fontSize:'.9rem',cursor:saving?'not-allowed':'pointer'}}>
               {saving?'Publishing...':'🚀 Save & Publish'}
             </button>
-          )}
-          {form.status==='active' && (
-            <button onClick={()=>router.push(`/property/${id}`)} style={{background:'#f7f9f7',border:'1px solid #e0e4e0',color:'#555',padding:'13px',borderRadius:10,fontWeight:600,fontSize:'.9rem',cursor:'pointer'}}>
+          ) : (
+            <button onClick={()=>router.push(`/property/${id}`)}
+              style={{background:'#f7f9f7',border:'1px solid #e0e4e0',color:'#555',padding:'13px',borderRadius:10,fontWeight:600,fontSize:'.9rem',cursor:'pointer'}}>
               View Live Listing →
             </button>
           )}
