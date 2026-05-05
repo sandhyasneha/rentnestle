@@ -80,28 +80,26 @@ export default function EditPropertyPage() {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     if (form.photos.length + files.length > 10) { setError('Maximum 10 photos allowed'); return }
-
-    setUploading(true)
-    setError('')
+    setUploading(true); setError(''); setSuccess('')
 
     for (const file of files) {
-      const uploadData = new FormData()
-      uploadData.append('file', file)
-      uploadData.append('property_id', id)
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('property_id', id)
+      const res  = await fetch('/api/upload-photo', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.success && data.photos) {
+        update('photos', data.photos)
+        setSuccess('✅ Photo saved!')
+        setTimeout(() => setSuccess(''), 3000)
+      } else {
+        setError(data.error || 'Upload failed')
+      }
+    }
 
-      try {
-        const res = await fetch('/api/upload-photo', { method: 'POST', body: uploadData })
-        let data: any = {}
-        try { data = await res.json() } catch {}
-
-        // Always reload from server to get latest saved photos
-        const propRes  = await fetch(`/api/properties/${id}`)
-        const propData = await propRes.json()
-        if (propData.property?.photos) {
-          update('photos', propData.property.photos)
-          setSuccess('✅ Photo saved to listing!')
-          setTimeout(() => setSuccess(''), 3000)
-        } else if (data.url) {
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  } else if (data.url) {
           update('photos', (f: any) => [...(f.photos || []), data.url])
         }
       } catch (err) {

@@ -6,7 +6,6 @@ import { useRouter, useParams } from 'next/navigation'
 declare global {
   interface Window {
     google: any
-    initStreetView: () => void
     initStreetViewCheck: () => void
   }
 }
@@ -26,6 +25,7 @@ export default function PropertyDetailPage() {
   const [visitTime, setVisitTime] = useState('')
   const [svLoaded,  setSvLoaded]  = useState(false)
   const [svAvail,   setSvAvail]   = useState<boolean|null>(null)
+  const [isOwner,   setIsOwner]   = useState(false)
   const svRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { if (id) loadProperty() }, [id])
@@ -34,23 +34,24 @@ export default function PropertyDetailPage() {
     try {
       const res  = await fetch(`/api/properties/${id}`)
       const data = await res.json()
-      setProperty(data.property || null)
-      if (data.property?.lat && data.property?.lng) {
-        checkStreetView(parseFloat(data.property.lat), parseFloat(data.property.lng))
-      }
+      const prop = data.property
+      setProperty(prop)
+
+      // Check if current user is the owner
+      const userId = localStorage.getItem('rn_user_id')
+      if (userId && prop?.owner_id === userId) setIsOwner(true)
+
+      if (prop?.lat && prop?.lng) checkStreetView(parseFloat(prop.lat), parseFloat(prop.lng))
     } catch {}
     setLoading(false)
   }
 
-  // Check if Street View exists for this location
   const checkStreetView = (lat: number, lng: number) => {
-    const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    if (!MAPS_KEY) return
-
+    const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    if (!key) return
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&callback=initStreetViewCheck`
+    script.src   = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=initStreetViewCheck`
     script.async = true
-
     window.initStreetViewCheck = () => {
       const svc = new window.google.maps.StreetViewService()
       svc.getPanorama({ location: { lat, lng }, radius: 50 }, (_: any, status: string) => {
@@ -62,12 +63,9 @@ export default function PropertyDetailPage() {
 
   const loadStreetView = () => {
     if (!property?.lat || !property?.lng || !svRef.current) return
-    const lat = parseFloat(property.lat)
-    const lng = parseFloat(property.lng)
     new window.google.maps.StreetViewPanorama(svRef.current, {
-      position: { lat, lng },
-      pov:  { heading: 165, pitch: 0 },
-      zoom: 1,
+      position: { lat: parseFloat(property.lat), lng: parseFloat(property.lng) },
+      pov: { heading: 165, pitch: 0 }, zoom: 1,
     })
     setSvLoaded(true)
   }
@@ -78,8 +76,7 @@ export default function PropertyDetailPage() {
     setSending(true)
     try {
       const res = await fetch('/api/inquiries', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ property_id: id, message: message || `Hi, I am interested in ${property?.title}` }),
       })
       if (res.ok) { setSent(true); setShowModal(null) }
@@ -93,14 +90,13 @@ export default function PropertyDetailPage() {
     setSending(true)
     try {
       await fetch('/api/inquiries', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           property_id: id,
           message: `I'd like to schedule a visit on ${visitDate} at ${visitTime}. Please confirm.`
         }),
       })
-      alert(`✅ Visit request sent for ${visitDate} at ${visitTime}! Owner will confirm shortly.`)
+      alert(`✅ Visit request sent for ${visitDate} at ${visitTime}!`)
       setShowModal(null)
     } catch {}
     setSending(false)
@@ -121,12 +117,9 @@ export default function PropertyDetailPage() {
   )
 
   const amenityList = Object.entries(property.amenities||{}).filter(([,v])=>v).map(([k])=>k)
-  const isOwner = localStorage.getItem('rn_user_id') === property.owner_id
 
   return (
     <div style={{maxWidth:960,margin:'0 auto',padding:'2rem 1rem 4rem'}}>
-
-      {/* Back */}
       <button onClick={()=>router.back()} style={{background:'none',border:'none',color:'#0F6E56',cursor:'pointer',fontWeight:600,fontSize:'.85rem',marginBottom:'1.25rem',display:'flex',alignItems:'center',gap:6}}>
         ← Back to Search
       </button>
@@ -141,16 +134,20 @@ export default function PropertyDetailPage() {
               ? <img src={property.photos[0]} alt={property.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
               : <span>🏠</span>
             }
-            {property.is_verified&&(
-              <div style={{position:'absolute',top:16,right:16,background:'#0F6E56',color:'#fff',fontSize:'.78rem',fontWeight:700,padding:'4px 12px',borderRadius:8}}>✓ Verified Property</div>
-            )}
-            {isOwner && (
-              <button onClick={()=>router.push(`/edit-property/${id}`)}
-                style={{position:'absolute',top:16,left:16,background:'#fff',color:'#0F6E56',border:'none',fontSize:'.78rem',fontWeight:700,padding:'4px 12px',borderRadius:8,cursor:'pointer'}}>
-                ✏️ Edit Listing
-              </button>
+            {property.is_verified && (
+              <div style={{position:'absolute',top:16,right:16,background:'#0F6E56',color:'#fff',fontSize:'.78rem',fontWeight:700,padding:'4px 12px',borderRadius:8}}>✓ Verified</div>
             )}
           </div>
+
+          {/* Multiple photos */}
+          {property.photos?.length > 1 && (
+            <div style={{display:'flex',gap:8,marginBottom:'1.5rem',overflowX:'auto',paddingBottom:4}}>
+              {property.photos.map((url: string, i: number) => (
+                <img key={i} src={url} alt={`Photo ${i+1}`}
+                  style={{width:100,height:70,objectFit:'cover',borderRadius:8,border:'2px solid #e0e4e0',flexShrink:0,cursor:'pointer'}}/>
+              ))}
+            </div>
+          )}
 
           <h1 style={{fontFamily:'Georgia,serif',fontSize:'1.6rem',fontWeight:700,marginBottom:'.5rem'}}>{property.title}</h1>
           <p style={{fontSize:'.9rem',color:'#555',marginBottom:'1.25rem'}}>
@@ -176,7 +173,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Description */}
-          {property.description&&(
+          {property.description && (
             <div style={{marginBottom:'1.5rem'}}>
               <h2 style={{fontFamily:'Georgia,serif',fontSize:'1.1rem',fontWeight:700,marginBottom:'.75rem'}}>About this Property</h2>
               <p style={{fontSize:'.9rem',color:'#444',lineHeight:1.8}}>{property.description}</p>
@@ -184,7 +181,7 @@ export default function PropertyDetailPage() {
           )}
 
           {/* Amenities */}
-          {amenityList.length>0&&(
+          {amenityList.length>0 && (
             <div style={{marginBottom:'1.5rem'}}>
               <h2 style={{fontFamily:'Georgia,serif',fontSize:'1.1rem',fontWeight:700,marginBottom:'.75rem'}}>Amenities</h2>
               <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
@@ -207,19 +204,13 @@ export default function PropertyDetailPage() {
                 Street View not available for this location.
               </div>
             ) : (
-              <div style={{position:'relative'}}>
-                <div ref={svRef} style={{width:'100%',height:350,borderRadius:12,overflow:'hidden',border:'1px solid #e0e4e0',background:'#f0f0f0'}}>
-                  {!svLoaded&&(
-                    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'1rem'}}>
-                      <div style={{fontSize:'2.5rem'}}>📸</div>
-                      <button onClick={loadStreetView}
-                        style={{background:'#0F6E56',color:'#fff',border:'none',padding:'10px 24px',borderRadius:10,fontWeight:700,cursor:'pointer',fontSize:'.9rem'}}>
-                        🗺️ Show Street View
-                      </button>
-                      <p style={{fontSize:'.75rem',color:'#888'}}>Loads Google Maps Street View</p>
-                    </div>
-                  )}
-                </div>
+              <div ref={svRef} style={{width:'100%',height:320,borderRadius:12,overflow:'hidden',border:'1px solid #e0e4e0',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'1rem'}}>
+                {!svLoaded && <>
+                  <div style={{fontSize:'2rem'}}>📸</div>
+                  <button onClick={loadStreetView} style={{background:'#0F6E56',color:'#fff',border:'none',padding:'10px 24px',borderRadius:10,fontWeight:700,cursor:'pointer'}}>
+                    🗺️ Show Street View
+                  </button>
+                </>}
               </div>
             )}
           </div>
@@ -228,43 +219,58 @@ export default function PropertyDetailPage() {
         {/* RIGHT — Contact card */}
         <div style={{position:'sticky',top:80}}>
           <div style={{background:'#fff',border:'1px solid #e0e4e0',borderRadius:16,padding:'1.5rem',boxShadow:'0 4px 20px rgba(0,0,0,.06)'}}>
+
             <div style={{fontFamily:'Georgia,serif',fontSize:'1.6rem',fontWeight:700,color:'#0F6E56',marginBottom:4}}>
               ₹{property.monthly_rent?.toLocaleString()}<span style={{fontSize:'1rem',fontWeight:400,color:'#888'}}>/mo</span>
             </div>
-            {property.security_deposit>0&&(
-              <div style={{fontSize:'.82rem',color:'#555',marginBottom:'.75rem'}}>Security: ₹{property.security_deposit?.toLocaleString()}</div>
+            {property.security_deposit>0 && (
+              <div style={{fontSize:'.82rem',color:'#555',marginBottom:'.75rem'}}>
+                Security: ₹{property.security_deposit?.toLocaleString()}
+              </div>
             )}
             <div style={{background:'#FAEEDA',color:'#BA7517',fontSize:'.78rem',fontWeight:700,padding:'6px 12px',borderRadius:8,marginBottom:'1.25rem',textAlign:'center'}}>
-              🎉 Zero Brokerage — Save ₹{property.monthly_rent?.toLocaleString()}
+              🎉 Zero Brokerage
             </div>
 
-            {sent ? (
-              <div style={{background:'#E1F5EE',color:'#0F6E56',borderRadius:10,padding:'1rem',textAlign:'center',fontWeight:600,fontSize:'.88rem',marginBottom:'.75rem'}}>
-                ✅ Inquiry Sent!<br/><span style={{fontSize:'.78rem',fontWeight:400}}>Owner will contact you soon on WhatsApp.</span>
+            {/* ── OWNER VIEW ── */}
+            {isOwner ? (
+              <div>
+                <div style={{background:'#E1F5EE',borderRadius:10,padding:'10px 14px',fontSize:'.83rem',color:'#0F6E56',fontWeight:600,marginBottom:'1rem',textAlign:'center'}}>
+                  🔑 This is your listing
+                </div>
+                <button onClick={()=>router.push(`/edit-property/${id}`)}
+                  style={{width:'100%',background:'#0F6E56',color:'#fff',border:'none',padding:'13px',borderRadius:12,fontWeight:700,fontSize:'.95rem',cursor:'pointer',marginBottom:'.75rem'}}>
+                  ✏️ Edit This Listing
+                </button>
+                <button onClick={()=>router.push('/dashboard/owner')}
+                  style={{width:'100%',background:'#f7f9f7',color:'#555',border:'1px solid #e0e4e0',padding:'11px',borderRadius:12,fontWeight:600,fontSize:'.88rem',cursor:'pointer'}}>
+                  📊 View Dashboard
+                </button>
               </div>
             ) : (
-              <button onClick={()=>setShowModal('contact')}
-                style={{width:'100%',background:'#0F6E56',color:'#fff',border:'none',padding:'14px',borderRadius:12,fontWeight:700,fontSize:'1rem',cursor:'pointer',marginBottom:'.75rem'}}>
-                📩 Contact Owner
-              </button>
-            )}
-
-            <button onClick={()=>setShowModal('visit')}
-              style={{width:'100%',background:'transparent',color:'#0F6E56',border:'1.5px solid #0F6E56',padding:'12px',borderRadius:12,fontWeight:600,fontSize:'.9rem',cursor:'pointer',marginBottom:'1rem'}}>
-              📅 Schedule a Visit
-            </button>
-
-            {isOwner && (
-              <button onClick={()=>router.push(`/edit-property/${id}`)}
-                style={{width:'100%',background:'#f7f9f7',color:'#555',border:'1px solid #e0e4e0',padding:'10px',borderRadius:12,fontWeight:600,fontSize:'.85rem',cursor:'pointer'}}>
-                ✏️ Edit This Listing
-              </button>
+              /* ── TENANT VIEW ── */
+              <div>
+                {sent ? (
+                  <div style={{background:'#E1F5EE',color:'#0F6E56',borderRadius:10,padding:'1rem',textAlign:'center',fontWeight:600,fontSize:'.88rem',marginBottom:'.75rem'}}>
+                    ✅ Inquiry Sent!<br/>
+                    <span style={{fontSize:'.78rem',fontWeight:400}}>Owner will contact you on WhatsApp.</span>
+                  </div>
+                ) : (
+                  <button onClick={()=>setShowModal('contact')}
+                    style={{width:'100%',background:'#0F6E56',color:'#fff',border:'none',padding:'14px',borderRadius:12,fontWeight:700,fontSize:'1rem',cursor:'pointer',marginBottom:'.75rem'}}>
+                    📩 Contact Owner
+                  </button>
+                )}
+                <button onClick={()=>setShowModal('visit')}
+                  style={{width:'100%',background:'transparent',color:'#0F6E56',border:'1.5px solid #0F6E56',padding:'12px',borderRadius:12,fontWeight:600,fontSize:'.9rem',cursor:'pointer'}}>
+                  📅 Schedule a Visit
+                </button>
+              </div>
             )}
 
             <div style={{marginTop:'1rem',padding:'1rem',background:'#f7f9f7',borderRadius:10,fontSize:'.78rem',color:'#555',lineHeight:1.8}}>
               <div>🏠 {property.property_type?.toUpperCase()} · Floor {property.floor_number||'N/A'} of {property.total_floors||'N/A'}</div>
               <div>📅 Listed {new Date(property.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
-              <div>🔑 Owner Verified ✅</div>
             </div>
           </div>
         </div>
@@ -278,12 +284,9 @@ export default function PropertyDetailPage() {
             <h3 style={{fontFamily:'Georgia,serif',fontSize:'1.15rem',marginBottom:'.25rem'}}>Contact Owner</h3>
             <p style={{fontSize:'.82rem',color:'#555',marginBottom:'1rem'}}>For: {property.title}</p>
             <label style={{display:'block',fontSize:'.78rem',fontWeight:600,color:'#555',marginBottom:5}}>Your Message</label>
-            <textarea
-              value={message}
-              onChange={e=>setMessage(e.target.value)}
+            <textarea value={message} onChange={e=>setMessage(e.target.value)}
               placeholder={`Hi, I am interested in ${property.title}. Please share more details.`}
-              style={{width:'100%',background:'#f7f9f7',border:'1.5px solid #e0e4e0',borderRadius:10,padding:'10px 12px',fontSize:'.9rem',fontFamily:'inherit',outline:'none',height:110,resize:'vertical' as const,marginBottom:'1rem'}}
-            />
+              style={{width:'100%',background:'#f7f9f7',border:'1.5px solid #e0e4e0',borderRadius:10,padding:'10px 12px',fontSize:'.9rem',fontFamily:'inherit',outline:'none',height:110,resize:'vertical' as const,marginBottom:'1rem'}}/>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
               <button onClick={()=>setShowModal(null)} style={{background:'#f7f9f7',border:'1px solid #e0e4e0',color:'#555',padding:'12px',borderRadius:10,fontWeight:600,cursor:'pointer'}}>Cancel</button>
               <button onClick={handleInquiry} disabled={sending}
@@ -305,7 +308,8 @@ export default function PropertyDetailPage() {
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem',marginBottom:'1.25rem'}}>
               <div>
                 <label style={{display:'block',fontSize:'.78rem',fontWeight:600,color:'#555',marginBottom:5}}>Preferred Date</label>
-                <input type="date" value={visitDate} onChange={e=>setVisitDate(e.target.value)} min={new Date().toISOString().split('T')[0]}
+                <input type="date" value={visitDate} onChange={e=>setVisitDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
                   style={{width:'100%',background:'#f7f9f7',border:'1.5px solid #e0e4e0',borderRadius:10,padding:'10px 12px',fontSize:'.9rem',fontFamily:'inherit',outline:'none'}}/>
               </div>
               <div>
@@ -313,7 +317,9 @@ export default function PropertyDetailPage() {
                 <select value={visitTime} onChange={e=>setVisitTime(e.target.value)}
                   style={{width:'100%',background:'#f7f9f7',border:'1.5px solid #e0e4e0',borderRadius:10,padding:'10px 12px',fontSize:'.9rem',fontFamily:'inherit',outline:'none'}}>
                   <option value="">Select time</option>
-                  {['9:00 AM','10:00 AM','11:00 AM','12:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM'].map(t=><option key={t} value={t}>{t}</option>)}
+                  {['9:00 AM','10:00 AM','11:00 AM','12:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM'].map(t=>(
+                    <option key={t} value={t}>{t}</option>
+                  ))}
                 </select>
               </div>
             </div>

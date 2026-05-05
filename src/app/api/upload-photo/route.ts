@@ -10,20 +10,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Generate SHA1 signature for Cloudinary
-async function generateSignature(params: Record<string, string>): Promise<string> {
-  // Sort params alphabetically and create string
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map(k => `${k}=${params[k]}`)
-    .join('&')
-
-  const stringToSign = sortedParams + API_SECRET
-  const encoder      = new TextEncoder()
-  const data         = encoder.encode(stringToSign)
-  const hashBuffer   = await crypto.subtle.digest('SHA-1', data)
-  const hashArray    = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+async function sha1(str: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str))
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('')
 }
 
 export async function POST(req: NextRequest) {
@@ -32,89 +21,57 @@ export async function POST(req: NextRequest) {
     const file       = formData.get('file') as File
     const propertyId = formData.get('property_id') as string
 
-    console.log('Upload request - file:', file?.name, 'size:', file?.size, 'propertyId:', propertyId)
-
     if (!file || !propertyId) {
-      return NextResponse.json({ error: 'File and property_id required' }, { status: 400 })
-    }
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Only image files allowed' }, { status: 400 })
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large. Max 5MB.' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing file or property_id' }, { status: 400 })
     }
 
-    // ── Upload to Cloudinary ──────────────────────────
-    const timestamp = Math.round(Date.now() / 1000).toString()
+    // Step 1: Upload to Cloudinary
+    const timestamp = String(Math.round(Date.now() / 1000))
     const folder    = `rentnestle/${propertyId}`
+    const signature = await sha1(`folder=${folder}&timestamp=${timestamp}${API_SECRET}`)
 
-    const signature = await generateSignature({ folder, timestamp })
+    const cf = new FormData()
+    cf.append('file', file)
+    cf.append('api_key', API_KEY)
+    cf.append('timestamp', timestamp)
+    cf.append('signature', signature)
+    cf.append('folder', folder)
 
-    console.log('Cloudinary params - cloud:', CLOUD_NAME, 'folder:', folder, 'timestamp:', timestamp)
+    const cRes  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+      method: 'POST', body: cf
+    })
+    const cData = await cRes.json()
 
-    const uploadForm = new FormData()
-    uploadForm.append('file', file)
-    uploadForm.append('api_key', API_KEY)
-    uploadForm.append('timestamp', timestamp)
-    uploadForm.append('signature', signature)
-    uploadForm.append('folder', folder)
-
-    const cloudRes = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-      { method: 'POST', body: uploadForm }
-    )
-
-    const cloudData = await cloudRes.json()
-    console.log('Cloudinary response status:', cloudRes.status)
-    console.log('Cloudinary response:', JSON.stringify(cloudData))
-
-    if (!cloudRes.ok || cloudData.error) {
-      const errMsg = cloudData.error?.message || 'Cloudinary upload failed'
-      console.error('Cloudinary error:', errMsg)
-      return NextResponse.json({ error: errMsg }, { status: 500 })
+    if (!cRes.ok || cData.error) {
+      return NextResponse.json({ error: cData.error?.message || 'Cloudinary failed' }, { status: 500 })
     }
 
-    const photoUrl = cloudData.secure_url
-    console.log('✅ Uploaded to Cloudinary:', photoUrl)
+    const url = cData.secure_url
 
-    // ── Save URL to Supabase ──────────────────────────
-    const { data: property } = await supabase
+    // Step 2: Get current photos
+    const { data: prop } = await supabase
       .from('properties')
       .select('photos')
       .eq('id', propertyId)
       .single()
 
-    const currentPhotos = (property?.photos as string[]) || []
-    const updatedPhotos = [...currentPhotos, photoUrl]
+    const photos = [...((prop?.photos as string[]) || []), url]
 
-    const { error: dbError } = await supabase
+    // Step 3: Save to DB
+    const { error: dbErr } = await supabase
       .from('properties')
-      .update({ photos: updatedPhotos })
+      .update({ photos })
       .eq('id', propertyId)
 
-    if (dbError) {
-      console.error('DB save error:', dbError.message)
-      // Photo uploaded but not saved — still return URL
-      return NextResponse.json({
-        success: true,
-        url:     photoUrl,
-        photos:  updatedPhotos,
-        warning: 'Photo uploaded but DB save failed: ' + dbError.message,
-      })
+    if (dbErr) {
+      console.error('DB error:', dbErr.message)
+      return NextResponse.json({ error: 'DB save failed: ' + dbErr.message }, { status: 500 })
     }
 
-    console.log('✅ Photos saved to DB:', updatedPhotos.length, 'total')
-
-    return NextResponse.json({
-      success: true,
-      url:     photoUrl,
-      photos:  updatedPhotos,
-    })
+    return NextResponse.json({ success: true, url, photos })
 
   } catch (err: any) {
-    console.error('Upload route error:', err?.message || err)
-    return NextResponse.json({
-      error: 'Upload failed: ' + (err?.message || 'Unknown error')
-    }, { status: 500 })
+    console.error('Upload error:', err)
+    return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 })
   }
 }
