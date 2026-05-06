@@ -101,10 +101,6 @@ export default function EditPropertyPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-    setUploading(false)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
   const removePhoto = async (idx: number) => {
     const updatedPhotos = form.photos.filter((_: string, i: number) => i !== idx)
     update('photos', updatedPhotos)
