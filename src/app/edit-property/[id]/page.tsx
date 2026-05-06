@@ -104,19 +104,25 @@ export default function EditPropertyPage() {
   const removePhoto = async (idx: number) => {
     const updatedPhotos = form.photos.filter((_: string, i: number) => i !== idx)
     update('photos', updatedPhotos)
-
-    // Save immediately
-    await fetch(`/api/edit-property/${id}`, {
+    // Save immediately via properties API
+    const res = await fetch(`/api/properties/${id}`, {
       method:  'PATCH',
       headers: {'Content-Type':'application/json'},
       body:    JSON.stringify({ photos: updatedPhotos }),
     })
+    if (!res.ok) {
+      const data = await res.json()
+      setError('Failed to remove photo: ' + (data.error || 'Unknown'))
+    } else {
+      setSuccess('Photo removed ✅')
+      setTimeout(() => setSuccess(''), 2000)
+    }
   }
 
   const handleSave = async (publish = false) => {
     setSaving(true); setError('')
     try {
-      const res = await fetch(`/api/edit-property/${id}`, {
+      const res = await fetch(`/api/properties/${id}`, {
         method:  'PATCH',
         headers: {'Content-Type':'application/json'},
         body:    JSON.stringify({...form, status: publish ? 'active' : form.status}),

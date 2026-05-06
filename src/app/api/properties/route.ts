@@ -162,26 +162,56 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH: Update property status
+// PATCH: Update property (status, photos, or full edit)
 export async function PATCH(req: NextRequest) {
   try {
     const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    const { id, status } = await req.json()
+    const body = await req.json()
+    const { id, ...updates } = body
+
+    if (!id) return NextResponse.json({ error: 'Property ID required' }, { status: 400 })
+
+    // Build clean update object — only include defined fields
+    const allowed = [
+      'status','photos','title','property_type','monthly_rent','security_deposit',
+      'address_line1','address_line2','city','state','pincode',
+      'bedrooms','bathrooms','area_sqft','floor_number','total_floors',
+      'furnishing','tenant_pref','food_pref','amenities','description',
+    ]
+    const updateData: Record<string, any> = {}
+    for (const key of allowed) {
+      if (updates[key] !== undefined) {
+        // Parse numeric fields
+        if (['monthly_rent','security_deposit','bedrooms','bathrooms',
+             'area_sqft','floor_number','total_floors'].includes(key)) {
+          updateData[key] = updates[key] ? parseInt(updates[key]) : null
+        } else {
+          updateData[key] = updates[key]
+        }
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
 
     const { data, error } = await supabase
       .from('properties')
-      .update({ status })
+      .update(updateData)
       .eq('id', id)
-      .eq('owner_id', user.userId)
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('PATCH error:', error.message)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ success: true, property: data })
 
   } catch (err) {
+    console.error('PATCH error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
