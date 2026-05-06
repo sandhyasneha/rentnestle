@@ -38,8 +38,14 @@ export default function PropertyDetailPage() {
       setProperty(prop)
 
       // Check if current user is the owner
-      const userId = localStorage.getItem('rn_user_id')
-      if (userId && prop?.owner_id === userId) setIsOwner(true)
+      // owner_id format is rn_{phone} — match by userId or phone
+      const userId  = localStorage.getItem('rn_user_id')
+      const phone   = localStorage.getItem('rn_user_phone')
+      const role    = localStorage.getItem('rn_user_role')
+      const ownerId = prop?.owner_id || ''
+      const isOwnerById    = userId && ownerId === userId
+      const isOwnerByPhone = phone && (ownerId === `rn_${phone}` || ownerId.includes(phone))
+      if (role === 'owner' && (isOwnerById || isOwnerByPhone)) setIsOwner(true)
 
       if (prop?.lat && prop?.lng) checkStreetView(parseFloat(prop.lat), parseFloat(prop.lng))
     } catch {}

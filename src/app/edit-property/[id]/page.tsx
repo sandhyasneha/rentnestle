@@ -99,25 +99,7 @@ export default function EditPropertyPage() {
 
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
-  } else if (data.url) {
-          update('photos', (f: any) => [...(f.photos || []), data.url])
-        }
-      } catch (err) {
-        console.error('Upload error:', err)
-        // Reload from server even on error - photo may have saved
-        try {
-          const propRes  = await fetch(`/api/properties/${id}`)
-          const propData = await propRes.json()
-          if (propData.property?.photos) {
-            update('photos', propData.property.photos)
-            setSuccess('✅ Photo saved!')
-            setTimeout(() => setSuccess(''), 3000)
-          } else {
-            setError('Upload failed. Please try again.')
-          }
-        } catch { setError('Upload failed. Please try again.') }
-      }
-    }
+  }
 
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
