@@ -43,9 +43,15 @@ export async function PATCH(
       if (updates[key] !== undefined) {
         const numeric = ['monthly_rent','security_deposit','bedrooms','bathrooms',
           'area_sqft','floor_number','total_floors']
-        updateData[key] = numeric.includes(key) && updates[key]
-          ? parseInt(updates[key])
-          : updates[key]
+        if (numeric.includes(key)) {
+          // Convert to int or null — never pass empty string to DB
+          const val = updates[key]
+          updateData[key] = (val !== '' && val !== null && val !== undefined)
+            ? parseInt(val)
+            : null
+        } else {
+          updateData[key] = updates[key]
+        }
       }
     }
 
