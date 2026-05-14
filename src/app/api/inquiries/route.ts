@@ -1,28 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { jwtVerify } from 'jose'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function getUserFromRequest(req: NextRequest) {
-  try {
-    const token = req.cookies.get('rentnestle_token')?.value
-    if (!token) return null
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET!))
-    return payload as { phone: string; userId: string; role: string; name: string }
-  } catch { return null }
-}
+const WA_TOKEN    = process.env.WA_TOKEN    || process.env.WHATSAPP_TOKEN
+const WA_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID
 
+// POST — Tenant sends inquiry to owner
 export async function POST(req: NextRequest) {
   try {
-    const user = await getUserFromRequest(req)
-    if (!user) return NextResponse.json({ error: 'Please sign in first' }, { status: 401 })
+    const { property_id, message, tenantPhone, tenantName, tenantId } = await req.json()
 
-    const { property_id, message } = await req.json()
-    if (!property_id) return NextResponse.json({ error: 'Property ID required' }, { status: 400 })
+    if (!property_id) {
+      return NextResponse.json({ error: 'Property ID required' }, { status: 400 })
+    }
+    if (!tenantPhone) {
+      return NextResponse.json({ error: 'Please sign in first' }, { status: 401 })
+    }
 
     // Get property + owner details
     const { data: property } = await supabase
@@ -31,14 +28,16 @@ export async function POST(req: NextRequest) {
       .eq('id', property_id)
       .single()
 
-    if (!property) return NextResponse.json({ error: 'Property not found' }, { status: 404 })
+    if (!property) {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 })
+    }
 
-    // Save inquiry
-    const { data: inquiry, error } = await supabase
+    // Save inquiry to DB
+    const { data: inquiry, error: inqErr } = await supabase
       .from('inquiries')
       .insert({
         property_id,
-        tenant_id:  user.userId,
+        tenant_id:  tenantId || `rn_${tenantPhone}`,
         owner_id:   property.owner_id,
         message:    message || `Hi, I am interested in ${property.title}`,
         status:     'pending',
@@ -47,93 +46,85 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
-    if (error) {
-      console.error('Inquiry insert error:', error.message)
-      return NextResponse.json({ error: 'Failed to send inquiry' }, { status: 500 })
+    if (inqErr) {
+      console.error('Inquiry insert error:', inqErr.message)
+      return NextResponse.json({ error: 'Failed to save inquiry: ' + inqErr.message }, { status: 500 })
     }
 
-    // Get owner profile for WhatsApp notification
+    // Get owner phone for WhatsApp notification
     const { data: ownerProfile } = await supabase
       .from('profiles')
       .select('phone, full_name')
       .eq('id', property.owner_id)
       .single()
 
+    console.log('Owner profile:', ownerProfile)
+    console.log('Sending WA to:', ownerProfile?.phone)
+
     // Send WhatsApp notification to owner
-    if (ownerProfile?.phone) {
-      await sendWhatsAppNotification(
-        ownerProfile.phone,
-        user.name || 'A tenant',
-        user.phone,
-        property.title,
-        property.city,
-        property.monthly_rent
+    if (ownerProfile?.phone && WA_TOKEN && WA_PHONE_ID) {
+      const waRes = await fetch(
+        `https://graph.facebook.com/v20.0/${WA_PHONE_ID}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${WA_TOKEN}`,
+            'Content-Type':  'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to:   `91${ownerProfile.phone}`,
+            type: 'text',
+            text: {
+              body: `🏠 *New Inquiry – RentNestle*\n\n*Property:* ${property.title}, ${property.city}\n*Rent:* ₹${property.monthly_rent?.toLocaleString()}/mo\n\n*From:* ${tenantName || 'A Tenant'}\n*Phone:* +91 ${tenantPhone}\n*Message:* ${message || 'Interested in this property'}\n\n👉 View inquiries: https://www.rentnestle.com/dashboard/owner`
+            }
+          }),
+        }
       )
+      const waData = await waRes.json()
+      console.log('WA notification result:', JSON.stringify(waData))
+    } else {
+      console.log('WA skipped — owner phone:', ownerProfile?.phone, 'token:', !!WA_TOKEN)
     }
 
     return NextResponse.json({ success: true, inquiry })
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('Inquiry error:', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 })
   }
 }
 
+// GET — Load inquiries for owner or tenant
 export async function GET(req: NextRequest) {
   try {
-    const user = await getUserFromRequest(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-
     const { searchParams } = new URL(req.url)
-    const role = searchParams.get('role') || user.role
+    const userId = searchParams.get('userId')
+    const role   = searchParams.get('role')
 
-    let query = supabase.from('inquiries').select('*, property:properties(title, city, monthly_rent, property_type)')
-
-    if (role === 'owner') {
-      query = query.eq('owner_id', user.userId)
-    } else {
-      query = query.eq('tenant_id', user.userId)
+    if (!userId) {
+      return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false }).limit(20)
+    let query = supabase
+      .from('inquiries')
+      .select('*, property:properties(id, title, city, monthly_rent, property_type, photos)')
+
+    if (role === 'owner') {
+      query = query.eq('owner_id', userId)
+    } else {
+      query = query.eq('tenant_id', userId)
+    }
+
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(20)
+
     if (error) throw error
 
     return NextResponse.json({ inquiries: data || [] })
 
-  } catch (err) {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
-  }
-}
-
-async function sendWhatsAppNotification(
-  ownerPhone: string,
-  tenantName: string,
-  tenantPhone: string,
-  propertyTitle: string,
-  city: string,
-  rent: number
-) {
-  const WA_TOKEN    = process.env.WA_TOKEN || process.env.WHATSAPP_TOKEN
-  const WA_PHONE_ID = process.env.WA_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID
-  if (!WA_TOKEN || !WA_PHONE_ID) return
-
-  try {
-    await fetch(`https://graph.facebook.com/v20.0/${WA_PHONE_ID}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${WA_TOKEN}`,
-        'Content-Type':  'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to:   `91${ownerPhone}`,
-        type: 'text',
-        text: {
-          body: `🏠 *New Inquiry on RentNestle!*\n\n*Property:* ${propertyTitle}, ${city}\n*Rent:* ₹${rent?.toLocaleString()}/mo\n\n*Tenant:* ${tenantName}\n*Phone:* +91 ${tenantPhone}\n\nLog in to RentNestle to respond: https://www.rentnestle.com/dashboard/owner`
-        }
-      }),
-    })
-  } catch (err) {
-    console.error('WhatsApp notification error:', err)
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 })
   }
 }

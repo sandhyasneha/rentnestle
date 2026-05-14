@@ -77,34 +77,58 @@ export default function PropertyDetailPage() {
   }
 
   const handleInquiry = async () => {
-    const name = localStorage.getItem('rn_user_name')
-    if (!name) { router.push('/auth/login'); return }
+    const name   = localStorage.getItem('rn_user_name')
+    const phone  = localStorage.getItem('rn_user_phone')
+    const userId = localStorage.getItem('rn_user_id')
+    if (!name || !phone) { router.push('/auth/login'); return }
     setSending(true)
     try {
       const res = await fetch('/api/inquiries', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ property_id: id, message: message || `Hi, I am interested in ${property?.title}` }),
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          property_id: id,
+          message:     message || `Hi, I am interested in ${property?.title}`,
+          tenantName:  name,
+          tenantPhone: phone,
+          tenantId:    userId || `rn_${phone}`,
+        }),
       })
-      if (res.ok) { setSent(true); setShowModal(null) }
-    } catch {}
+      const data = await res.json()
+      console.log('Inquiry response:', data)
+      if (res.ok && data.success) {
+        setSent(true)
+        setShowModal(null)
+      }
+    } catch (err) {
+      console.error('Inquiry error:', err)
+    }
     setSending(false)
   }
 
   const handleVisit = async () => {
-    const name = localStorage.getItem('rn_user_name')
-    if (!name) { router.push('/auth/login'); return }
+    const name   = localStorage.getItem('rn_user_name')
+    const phone  = localStorage.getItem('rn_user_phone')
+    const userId = localStorage.getItem('rn_user_id')
+    if (!name || !phone) { router.push('/auth/login'); return }
     setSending(true)
     try {
       await fetch('/api/inquiries', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           property_id: id,
-          message: `I'd like to schedule a visit on ${visitDate} at ${visitTime}. Please confirm.`
+          message:     `I would like to schedule a visit on ${visitDate} at ${visitTime}. Please confirm.`,
+          tenantName:  name,
+          tenantPhone: phone,
+          tenantId:    userId || `rn_${phone}`,
         }),
       })
-      alert(`✅ Visit request sent for ${visitDate} at ${visitTime}!`)
+      alert(`✅ Visit request sent for ${visitDate} at ${visitTime}! Owner will contact you on WhatsApp.`)
       setShowModal(null)
-    } catch {}
+    } catch (err) {
+      console.error('Visit request error:', err)
+    }
     setSending(false)
   }
 
